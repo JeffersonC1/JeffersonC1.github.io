@@ -1,1 +1,0 @@
-# JeffersonC1.github.io
