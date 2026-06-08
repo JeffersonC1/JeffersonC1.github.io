@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Therapeutic Cognitive Engagement App</title>
+    <style>
+        :root {
+            --bg-color: #f6f2eb;
+            --text-color: #2c1e11;
+            --hint-color: #c2410c;
+            --success-flash: #15803d;
+            --card-bg: #ffffff;
+            --header-bg: #e2e8f0;
+            --primary-font: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            font-family: var(--primary-font);
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100vw;
+            height: 100vh;
+            user-select: none;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #ipad-container {
+            width: 850px;
+            height: 600px;
+            background: #faf9f6;
+            border: 16px solid var(--text-color);
+            border-radius: 36px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            position: absolute; 
+            transform-origin: center center;
+            display: flex;
+            flex-direction: column;
+            padding: 30px;
+            box-sizing: border-box;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        h1 { 
+            font-size: 28px; 
+            color: var(--text-color); 
+            margin: 0; 
+        }
+
+        .right-header-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #progress-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 5px;
+        }
+
+        #progress {
+            font-size: 18px;
+            background: #ecdcc4;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #difficulty-badge {
+            font-size: 14px;
+            color: #475569;
+            background: #f1f5f9;
+            padding: 4px 10px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            font-weight: bold;
+        }
+
+        /* Standardized Header Button Styles */
+        .btn-primary {
+            font-family: var(--primary-font);
+            font-size: 15px;
+            font-weight: bold;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        #lang-button {
+            background: #b91c1c; 
+            box-shadow: 0 4px 6px rgba(185, 28, 28, 0.15);
+        }
+        #lang-button:hover { background: #991b1b; }
+
+        #fullscreen-button {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            z-index: 250;
+            background: #475569;
+            box-shadow: 0 4px 6px rgba(71, 85, 105, 0.15);
+            font-size: 18px; /* Slightly larger for icon */
+            padding: 8px 14px;
+        }
+        #fullscreen-button:hover { background: #334155; }
+
+        /* Pseudo-fullscreen fallback for iOS Safari (Fullscreen API unsupported on iPad) */
+        body.pseudo-fullscreen {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        body.pseudo-fullscreen #ipad-container {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            width: 100vw;
+            height: 100vh;
+            max-width: none;
+            max-height: none;
+            border-radius: 0;
+            margin: 0;
+            z-index: 9999;
+        }
+
+        #skip-button {
+            font-family: var(--primary-font);
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+            background: #64748b;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .game-screen {
+            flex-grow: 1;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-around;
+            position: relative;
+        }
+
+        .active { display: flex; }
+
+        .instruction {
+            font-size: 26px;
+            color: var(--text-color);
+            font-weight: bold;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        .game-zone {
+            display: flex;
+            width: 100%;
+            justify-content: space-around;
+            align-items: center;
+            flex-grow: 1;
+            position: relative;
+        }
+
+        .drop-target {
+            width: 210px;
+            height: 210px;
+            border: 5px dashed var(--hint-color);
+            border-radius: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--card-bg);
+            transition: all 0.2s ease;
+        }
+
+        .drop-target.instant-success {
+            background-color: #f0fdf4 !important;
+            border: 5px solid var(--success-flash) !important;
+            transform: scale(1.05);
+        }
+
+        .draggable-source-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            background: #ecdcc4;
+            padding: 25px;
+            border-radius: 24px;
+            max-width: 320px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .draggable-item {
+            touch-action: none;
+            cursor: grab;
+            position: relative;
+            z-index: 5;
+            transition: opacity 0.3s ease;
+        }
+
+        .shape-svg { width: 85px; height: 85px; pointer-events: none; }
+        .drop-target .shape-svg { opacity: 0.2; }
+        
+        .color-swatch {
+            width: 85px;
+            height: 85px;
+            border-radius: 20px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            pointer-events: none;
+        }
+        .color-bucket { width: 140px; height: 140px; border-radius: 50%; }
+
+        .object-grid { display: grid; gap: 20px; justify-content: center; }
+        .object-card {
+            background: var(--card-bg);
+            border: 3px solid #ecdcc4;
+            border-radius: 20px;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            cursor: pointer;
+            width: 130px;
+            height: 130px;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+        .object-card span { font-size: 60px; pointer-events: none; }
+        .object-card.demo-pressed {
+            transform: scale(0.9);
+            background-color: #e2e8f0;
+            border-color: #b91c1c;
+        }
+        
+        .object-card.instant-success {
+            background-color: #f0fdf4 !important;
+            border-color: var(--success-flash) !important;
+            transform: scale(1.05);
+        }
+
+        .card-grid { display: grid; gap: 20px; justify-content: center; }
+        .tile {
+            width: 115px;
+            height: 145px;
+            background: #991b1b; 
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: #fef08a; 
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .tile.flipped {
+            background: white;
+            border: 3px solid var(--hint-color);
+            color: initial;
+            cursor: default;
+        }
+        .tile.flipped.instant-success {
+            border-color: var(--success-flash) !important;
+            background-color: #f0fdf4 !important;
+        }
+        .tile.matched { opacity: 0; transform: scale(0); pointer-events: none; }
+
+        .hint-pulse {
+            animation: gentleGlow 1.4s infinite alternate ease-in-out;
+            z-index: 10 !important;
+        }
+
+        @keyframes gentleGlow {
+            0% { transform: scale(1); filter: drop-shadow(0 0 2px var(--hint-color)); }
+            100% { transform: scale(1.04); filter: drop-shadow(0 0 14px var(--hint-color)); border-color: var(--hint-color); }
+        }
+
+        .faded-error {
+            opacity: 0.12 !important;
+            pointer-events: none !important;
+            cursor: default !important;
+            box-shadow: none !important;
+        }
+
+        .success-particle {
+            position: absolute;
+            pointer-events: none;
+            font-size: 26px;
+            z-index: 99;
+            transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.6s ease;
+            transform: translate(-50%, -50%);
+        }
+
+        #celebration {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, #fef08a 0%, #fca5a5 60%, #b91c1c 100%);
+            border-radius: 20px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        #celebration.visible { opacity: 1; }
+        #celebration span {
+            transform: scale(0.5);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #celebration.visible span { transform: scale(1.3); }
+
+        #input-lock-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.01);
+            border-radius: 20px;
+            display: none;
+            z-index: 90;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 20px;
+        }
+
+        .banner-msg {
+            background: var(--hint-color);
+            color: white;
+            padding: 12px 36px;
+            border-radius: 30px;
+            font-size: 26px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+
+        #demo-pointer {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background-color: rgba(194, 65, 12, 0.5);
+            border: 3px solid rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 95;
+            display: none;
+            box-shadow: 0 0 12px rgba(0,0,0,0.25);
+            transform-origin: center;
+        }
+
+        /* --- START SCREEN --- */
+        #start-screen {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(160deg, #faf3e3 0%, #f1d9a8 100%);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            text-align: center;
+            padding: 40px;
+            box-sizing: border-box;
+        }
+        #start-screen.hidden { display: none; }
+        #start-screen .logo {
+            font-size: 110px;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.15));
+        }
+        #start-screen h1 {
+            font-size: 46px;
+            color: var(--text-color);
+            margin: 0 0 10px 0;
+            letter-spacing: 1px;
+        }
+        #start-screen p {
+            font-size: 20px;
+            color: #6b4f2a;
+            margin: 0 0 36px 0;
+            max-width: 560px;
+            line-height: 1.5;
+        }
+        #start-button {
+            font-family: var(--primary-font);
+            font-size: 26px;
+            font-weight: bold;
+            color: #fff;
+            background: var(--hint-color);
+            border: none;
+            padding: 18px 56px;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(194,65,12,0.35);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        #start-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(194,65,12,0.45);
+        }
+        #start-button:active { transform: translateY(1px); }
+        #start-lang {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--text-color) !important;
+            color: #fff !important;
+            border-color: var(--text-color) !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ipad-container">
+        <div id="start-screen">
+            <button id="start-lang" class="btn-primary" onclick="toggleLanguage()">🌐 English</button>
+            <div class="logo">🏮</div>
+            <h1 id="start-title">Cognitive Engagement</h1>
+            <p id="start-subtitle">A series of gentle games for focus, memory, and matching.</p>
+            <button id="start-button" onclick="startApp()">Start ▶</button>
+        </div>
+
+        <div id="input-lock-overlay">
+            <div class="banner-msg" id="lock-banner">👀 Watch the Demo!</div>
+        </div>
+
+        <div id="demo-pointer"></div>
+
+        <div id="celebration">
+            <span style="font-size: 100px; display: inline-block;">🏮</span>
+            <h2 id="celeb-title" style="font-size: 44px; color: #ffffff; text-shadow: 0 2px 8px rgba(0,0,0,0.3); margin: 15px 0 5px 0;">TASK COMPLETE!</h2>
+            <p id="celeb-sub" style="color: #fef08a; font-weight: bold; font-size: 22px; margin: 0;">Loading next game...</p>
+        </div>
+
+        <header>
+            <h1 id="game-title">Shape Sorting</h1>
+            <div class="right-header-controls">
+                <button id="lang-button" class="btn-primary" onclick="toggleLanguage()">🌐 English</button>
+                
+                <div id="progress-container">
+                    <div id="progress">Round: 1/10</div>
+                    <div class="header-controls">
+                        <button id="skip-button" onclick="skipCurrentTask()">Skip ➡️</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div id="shapeSorting" class="game-screen active">
+            <div class="instruction" id="shape-instruction">Drag the shape into the matching box!</div>
+            <div class="game-zone">
+                <div class="drop-target" id="shape-target" data-accept=""></div>
+                <div class="draggable-source-container" id="shape-options"></div>
+            </div>
+        </div>
+
+        <div id="colorSorting" class="game-screen">
+            <div class="instruction" id="color-instruction">Drag the block into the matching color bucket!</div>
+            <div class="game-zone">
+                <div class="drop-target" id="color-target-box" data-accept="">
+                    <div class="color-bucket" id="color-target-bucket"></div>
+                </div>
+                <div class="draggable-source-container" id="color-options"></div>
+            </div>
+        </div>
+
+        <div id="objectID" class="game-screen">
+            <div class="instruction" id="object-instruction">Where is the Tea?</div>
+            <div class="object-grid" id="object-options"></div>
+        </div>
+
+        <div id="matching" class="game-screen">
+            <div class="instruction" id="matching-instruction">Find ALL the matching pairs!</div>
+            <div class="card-grid" id="card-options"></div>
+        </div>
+
+        <button id="fullscreen-button" class="btn-primary" onclick="toggleFullScreen()" title="Toggle Fullscreen">⛶</button>
+    </div>
+
+    <script>
+        // --- FULLSCREEN CONTROLS ---
+        function toggleFullScreen() {
+            const doc = document;
+            const el = document.documentElement;
+            const isFs = doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement;
+            const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+
+            // iOS Safari (iPad/iPhone) does not support the Fullscreen API on
+            // non-video elements. Fall back to a CSS-based pseudo-fullscreen.
+            if (!req) {
+                document.body.classList.toggle('pseudo-fullscreen');
+                return;
+            }
+
+            if (!isFs) {
+                req.call(el).catch(() => {
+                    document.body.classList.add('pseudo-fullscreen');
+                });
+            } else {
+                const exit = doc.exitFullscreen || doc.webkitExitFullscreen || doc.mozCancelFullScreen || doc.msExitFullscreen;
+                if (exit) exit.call(doc);
+                document.body.classList.remove('pseudo-fullscreen');
+            }
+        }
+
+        // --- RESPONSIVE SCALING ENGINE ---
+        let currentScale = 1;
+
+        function resizeGame() {
+            const container = document.getElementById('ipad-container');
+            const padding = 20; // Ensure margin on all sides
+            
+            const scaleX = (window.innerWidth - padding) / 850;
+            const scaleY = (window.innerHeight - padding) / 600;
+            
+            // Constrain scale so it fits entirely without breaking layout
+            currentScale = Math.min(scaleX, scaleY);
+            
+            container.style.transform = `scale(${currentScale})`;
+        }
+
+        window.addEventListener('resize', resizeGame);
+        resizeGame(); // Initial resize call
+
+        const maxRounds = 10;
+        let currentRound = 1;
+        let games = ['shapeSorting', 'colorSorting', 'objectID', 'matching'];
+        let currentGameIndex = 0;
+        let totalMatchesNeeded = 0;
+        let totalMatchesFound = 0;
+        let isDemoMode = false;
+        let activeDemoTimeoutIds = [];
+        let currentLang = 'en'; 
+        
+        const translations = {
+            en: {
+                langName: "🌐 English", watchDemo: "👀 Watch the Demo!", yourTurn: "✨ Your Turn!", round: "Round", skip: "Skip ➡️",
+                taskComplete: ["TASK COMPLETE!", "EXCELLENT!", "WELL DONE!", "AMAZING!", "GREAT JOB!", "FANTASTIC!", "SUPER!", "BRILLIANT!"],
+                loadingNext: "Loading next game...", diffEasy: "Easy Focus", diffMed: "Standard Focus", diffHard: "Deep Focus",
+                startTitle: "Cognitive Engagement", startSubtitle: "A series of gentle games for focus, memory, and matching.", startButton: "Start ▶",
+                titles: { shapeSorting: "Lattice Shapes", colorSorting: "Traditional Colors", objectID: "Cultural Objects", matching: "Memory Matching" },
+                instructions: { shape: "Find the matching lattice silhouette.", color: "Place the color piece into its matching container.", matching: "Find the cards that belong together.", objectFind: "Can you locate the " },
+                matchHere: "Place Here", 
+                objects: { Teapot: "Teapot", Panda: "Panda", Lantern: "Lantern", Dumpling: "Dumpling", Fan: "Folding Fan", Jade: "Jade Pendant" }
+            },
+            'zh-cn': {
+                langName: "🌐 简体中文", watchDemo: "👀 请看演示", yourTurn: "✨ 请您试一试", round: "关卡", skip: "跳过 ➡️",
+                taskComplete: ["做得好！大吉大利！", "太棒了！", "出色完成！", "你真厉害！", "赞！", "非常好！", "完美！", "继续保持！"],
+                loadingNext: "正在为您载入下一个练习...", diffEasy: "难度: 轻松", diffMed: "难度: 适中", diffHard: "难度: 挑战",
+                startTitle: "认知练习", startSubtitle: "一系列温和的小游戏，帮助您专注、记忆与配对。", startButton: "开始 ▶",
+                titles: { shapeSorting: "窗棂图形", colorSorting: "传统色彩", objectID: "物象识别", matching: "记忆连连看" },
+                instructions: { shape: "请把对应的花窗形状放进虚线框中。", color: "请把色彩块放进相同古典颜色的圆桶中。", matching: "请翻出两张图案相同的吉祥卡片。", objectFind: "请问下面哪一个是 " },
+                matchHere: "请放这里", 
+                objects: { Teapot: "紫砂茶壶", Panda: "大熊猫", Lantern: "红灯笼", Dumpling: "吉祥饺子", Fan: "折扇", Jade: "翡翠玉佩" }
+            },
+            'zh-hk': {
+                langName: "🌐 繁體中文", watchDemo: "👀 請睇示範", yourTurn: "✨ 請您試下", round: "關卡", skip: "跳過 ➡️",
+                taskComplete: ["做得好！大吉大利！", "好叻啊！", "出色完成！", "你好勁！", "正！", "非常好！", "完美！", "繼續加油！"],
+                loadingNext: "正在為您準備下一項練習...", diffEasy: "難度: 輕鬆", diffMed: "難度: 適中", diffHard: "難度: 挑戰",
+                startTitle: "認知練習", startSubtitle: "一系列溫和嘅小遊戲，幫您專注、記憶同配對。", startButton: "開始 ▶",
+                titles: { shapeSorting: "形狀配對", colorSorting: "傳統色彩", objectID: "物象識別", matching: "記憶翻牌子" },
+                instructions: { shape: "請將對应嘅花窗形狀拖入去虛線框度啦。", color: "請將色彩塊放入去相同古典顏色嘅圓桶度啦。", matching: "請搵出兩張圖案相同嘅吉祥卡片。", objectFind: "請問下面邊一個先係 " },
+                matchHere: "請擺呢度", 
+                objects: { Teapot: "紫砂茶壺", Panda: "大熊貓", Lantern: "紅燈籠", Dumpling: "吉祥餃子", Fan: "摺扇", Jade: "擺設玉佩" }
+            }
+        };
+
+        function getRandomTaskComplete() {
+            const messages = translations[currentLang].taskComplete;
+            return messages[Math.floor(Math.random() * messages.length)];
+        }
+
+        // --- NATIVE MULTI-SENSORY ENGINE ---
+        let audioCtx = null;
+
+        function initAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playFeedbackSound(type) {
+            try {
+                initAudioContext();
+                const now = audioCtx.currentTime;
+
+                if (type === 'success') {
+                    const notes = [440.00, 554.37, 659.25];
+                    notes.forEach((freq, idx) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, now + (idx * 0.04)); 
+                        
+                        gain.gain.setValueAtTime(0.12, now + (idx * 0.04));
+                        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+                        
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + (idx * 0.04));
+                        osc.stop(now + 0.5);
+                    });
+                } 
+                else if (type === 'error') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(180, now);
+                    
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+                    
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                } 
+                else if (type === 'transition') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.exponentialRampToValueAtTime(880, now + 0.3);
+                    
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+                    
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                }
+            } catch (e) {
+                console.log("Audio context block bypassed:", e);
+            }
+        }
+
+        function triggerHaptic(type) {
+            if (!navigator.vibrate) return;
+            if (type === 'success') {
+                navigator.vibrate(40); 
+            } else if (type === 'error') {
+                navigator.vibrate([60, 40, 60]); 
+            } else if (type === 'transition') {
+                navigator.vibrate(100); 
+            }
+        }
+
+        // Proactive Visual Reward Engine
+        function triggerSuccessBurst(originX, originY) {
+            const container = document.getElementById('ipad-container');
+            const rect = container.getBoundingClientRect();
+            
+            // Adjust coordinates to match localized absolute alignment map factored by currentScale
+            const localX = (originX - rect.left) / currentScale;
+            const localY = (originY - rect.top) / currentScale;
+            
+            const particles = ['🏮', '✨', '🏮', '✨'];
+            
+            for (let i = 0; i < 8; i++) {
+                const p = document.createElement('div');
+                p.className = 'success-particle';
+                p.innerText = particles[i % particles.length];
+                p.style.left = `${localX}px`;
+                p.style.top = `${localY}px`;
+                container.appendChild(p);
+                
+                const angle = (i / 8) * Math.PI * 2 + (Math.random() * 0.4);
+                const distance = 60 + Math.random() * 50;
+                const destX = Math.cos(angle) * distance;
+                const destY = Math.sin(angle) * distance;
+                
+                requestAnimationFrame(() => {
+                    p.style.transform = `translate(calc(-50% + ${destX}px), calc(-50% + ${destY}px)) scale(1.2)`;
+                    p.style.opacity = '0';
+                });
+                
+                setTimeout(() => p.remove(), 600);
+            }
+        }
+
+        function toggleLanguage() {
+            initAudioContext();
+            if (currentLang === 'en') currentLang = 'zh-cn';
+            else if (currentLang === 'zh-cn') currentLang = 'zh-hk';
+            else currentLang = 'en';
+
+            const t = translations[currentLang];
+            document.getElementById('lang-button').innerText = t.langName;
+            document.getElementById('start-lang').innerText = t.langName;
+            document.getElementById('start-title').innerText = t.startTitle;
+            document.getElementById('start-subtitle').innerText = t.startSubtitle;
+            document.getElementById('start-button').innerText = t.startButton;
+            document.getElementById('skip-button').innerText = t.skip;
+            document.getElementById('celeb-sub').innerText = t.loadingNext;
+
+            updateDifficultyBadge();
+            document.getElementById('progress').innerText = `${t.round}: ${currentRound}/${maxRounds}`;
+            if (!document.getElementById('start-screen').classList.contains('hidden')) return;
+            initGame();
+        }
+
+        // --- ADAPTIVE ATTENTION GUIDANCE ENGINE ---
+        let idleTimer = null;
+        let currentLevelAnswers = []; 
+
+        function pokeActivityEngine() {
+            clearTimeout(idleTimer);
+            clearActiveHints();
+            if (!isDemoMode) {
+                idleTimer = setTimeout(() => triggerSmartHint(), 3000);
+            }
+        }
+
+        function trackMistake(offendingElement = null) {
+            triggerHaptic('error');
+            playFeedbackSound('error');
+
+            if (offendingElement) {
+                offendingElement.classList.add('faded-error');
+                offendingElement.onpointerdown = null;
+                offendingElement.onclick = null;
+            }
+            triggerSmartHint();
+        }
+
+        function clearActiveHints() {
+            document.querySelectorAll('.hint-pulse').forEach(el => el.classList.remove('hint-pulse'));
+        }
+
+        function triggerSmartHint() {
+            if (isDemoMode) return; 
+            currentLevelAnswers.forEach(el => {
+                if (el) el.classList.add('hint-pulse');
+            });
+        }
+
+        function updateDifficultyBadge() { /* removed */ }
+
+        function skipCurrentTask() {
+            initAudioContext();
+            activeDemoTimeoutIds.forEach(id => clearTimeout(id));
+            activeDemoTimeoutIds = [];
+            isDemoMode = false;
+            document.getElementById('input-lock-overlay').style.display = "none";
+            document.getElementById('demo-pointer').style.display = "none";
+            document.querySelectorAll('.object-card').forEach(c => c.classList.remove('demo-pressed'));
+            clearActiveHints();
+            forceTaskTransition();
+        }
+
+        function forceTaskTransition() {
+            clearTimeout(idleTimer);
+            triggerHaptic('transition');
+            playFeedbackSound('transition');
+
+            const celebContainer = document.getElementById('celebration');
+            document.getElementById('celeb-title').innerText = getRandomTaskComplete();
+            celebContainer.style.display = 'flex';
+            setTimeout(() => celebContainer.classList.add('visible'), 10);
+            
+            setTimeout(() => {
+                celebContainer.classList.remove('visible');
+                setTimeout(() => {
+                    celebContainer.style.display = 'none';
+                    currentRound = 1;
+                    document.getElementById(games[currentGameIndex]).classList.remove('active');
+                    currentGameIndex = (currentGameIndex + 1) % games.length;
+                    document.getElementById(games[currentGameIndex]).classList.add('active');
+                    document.getElementById('progress').innerText = `${translations[currentLang].round}: ${currentRound}/${maxRounds}`;
+                    initGame();
+                }, 250);
+            }, 600); 
+        }
+
+        function handleRoundComplete(targetElement, eventX, eventY) {
+            if (isDemoMode) return;
+            clearTimeout(idleTimer);
+            clearActiveHints();
+            
+            if (targetElement) targetElement.classList.add('instant-success');
+            if (eventX && eventY) triggerSuccessBurst(eventX, eventY);
+            
+            currentRound++;
+            
+            const delayTime = 400; 
+            setTimeout(() => {
+                if (targetElement) targetElement.classList.remove('instant-success');
+                if (currentRound > maxRounds) {
+                    forceTaskTransition();
+                } else {
+                    triggerHaptic('success');
+                    playFeedbackSound('success');
+                    document.getElementById('progress').innerText = `${translations[currentLang].round}: ${currentRound}/${maxRounds}`;
+                    initGame();
+                }
+            }, delayTime);
+        }
+
+        function initGame() {
+            updateDifficultyBadge();
+            currentLevelAnswers = [];
+            const activeGame = games[currentGameIndex];
+            
+            document.getElementById('game-title').innerText = translations[currentLang].titles[activeGame];
+            
+            if (activeGame === 'shapeSorting') setupShapeGame();
+            else if (activeGame === 'colorSorting') setupColorGame();
+            else if (activeGame === 'objectID') setupObjectIDGame();
+            else if (activeGame === 'matching') setupMatchingGame();
+            
+            pokeActivityEngine();
+        }
+
+        // --- GLOBAL DEMONSTRATION ENGINE ---
+        function runDemonstration(itemElement, targetElement, actionType, secondaryItem = null, remainingLoops = 1) {
+            if (currentRound !== 1) {
+                isDemoMode = false;
+                return;
+            }
+
+            isDemoMode = true;
+            const lockOverlay = document.getElementById('input-lock-overlay');
+            const banner = document.getElementById('lock-banner');
+            const pointer = document.getElementById('demo-pointer');
+            const containerRect = document.getElementById('ipad-container').getBoundingClientRect();
+
+            banner.innerText = translations[currentLang].watchDemo;
+            lockOverlay.style.display = "flex";
+
+            const itemRect = itemElement.getBoundingClientRect();
+            // Account for scale to ensure accurate placement
+            const startLeft = ((itemRect.left - containerRect.left) / currentScale) + (itemRect.width / currentScale / 2) - 20;
+            const startTop = ((itemRect.top - containerRect.top) / currentScale) + (itemRect.height / currentScale / 2) - 20;
+
+            pointer.style.transition = "none";
+            pointer.style.left = `${startLeft}px`;
+            pointer.style.top = `${startTop}px`;
+            pointer.style.transform = "scale(1)";
+            pointer.style.display = "block";
+
+            let t1 = setTimeout(() => {
+                pointer.style.transition = "transform 0.4s ease";
+                pointer.style.transform = actionType === 'tap' && !secondaryItem ? "scale(0.6)" : "scale(0.8)";
+                
+                if (actionType === 'tap' && !secondaryItem) itemElement.classList.add('demo-pressed');
+
+                let t2 = setTimeout(() => {
+                    if (actionType === 'drag') {
+                        const targetRect = targetElement.getBoundingClientRect();
+                        // Scaling correction needed for drag vectors
+                        let moveX = ((targetRect.left - itemRect.left) / currentScale) + (targetRect.width / currentScale / 2) - (itemRect.width / currentScale / 2);
+                        let moveY = ((targetRect.top - itemRect.top) / currentScale) + (targetRect.height / currentScale / 2) - (itemRect.height / currentScale / 2);
+
+                        itemElement.style.transition = "transform 2.0s cubic-bezier(0.45, 0, 0.55, 1)";
+                        itemElement.style.transform = `translate(${moveX}px, ${moveY}px)`;
+                        pointer.style.transition = "transform 2.0s cubic-bezier(0.45, 0, 0.55, 1)";
+                        pointer.style.transform = `translate(${moveX}px, ${moveY}px) scale(0.8)`;
+                    } else if (actionType === 'tap' && secondaryItem) {
+                        tileShowFace(itemElement);
+                    }
+
+                    let t3 = setTimeout(() => {
+                        pointer.style.transform = "scale(1)";
+                        if (actionType === 'tap' && !secondaryItem) itemElement.classList.remove('demo-pressed');
+
+                        if (actionType === 'tap' && secondaryItem) {
+                            let t4 = setTimeout(() => {
+                                const secRect = secondaryItem.getBoundingClientRect();
+                                const nextLeft = ((secRect.left - containerRect.left) / currentScale) + (secRect.width / currentScale / 2) - 20;
+                                const nextTop = ((secRect.top - containerRect.top) / currentScale) + (secRect.height / currentScale / 2) - 20;
+
+                                pointer.style.transition = "all 1.2s ease";
+                                pointer.style.left = `${nextLeft}px`;
+                                pointer.style.top = `${nextTop}px`;
+
+                                let t5 = setTimeout(() => {
+                                    pointer.style.transform = "scale(0.8)";
+                                    tileShowFace(secondaryItem);
+                                    let t6 = setTimeout(() => finishDemoStep(), 1600);
+                                    activeDemoTimeoutIds.push(t6);
+                                }, 1200);
+                                activeDemoTimeoutIds.push(t5);
+                            }, 800);
+                            activeDemoTimeoutIds.push(t4);
+                        } else {
+                            let t7 = setTimeout(() => finishDemoStep(), 1000);
+                            activeDemoTimeoutIds.push(t7);
+                        }
+
+                        function finishDemoStep() {
+                            pointer.style.display = "none";
+                            pointer.style.transform = "none";
+                            itemElement.style.transition = "none";
+                            itemElement.style.transform = "none";
+                            tileHideFace(itemElement);
+                            itemElement.classList.remove('demo-pressed');
+                            if (secondaryItem) {
+                                tileHideFace(secondaryItem);
+                            }
+
+                            let loopsLeft = remainingLoops - 1;
+                            if (loopsLeft > 0) {
+                                runDemonstration(itemElement, targetElement, actionType, secondaryItem, loopsLeft);
+                            } else {
+                                banner.innerText = translations[currentLang].yourTurn;
+                                banner.style.background = "#047857";
+                                let t8 = setTimeout(() => {
+                                    lockOverlay.style.display = "none";
+                                    isDemoMode = false;
+                                    pokeActivityEngine(); 
+                                }, 1200);
+                                activeDemoTimeoutIds.push(t8);
+                            }
+                        }
+                    }, actionType === 'drag' ? 2100 : 1000);
+                    activeDemoTimeoutIds.push(t3);
+                }, 400);
+                activeDemoTimeoutIds.push(t2);
+            }, 800);
+            activeDemoTimeoutIds.push(t1);
+        }
+
+        function tileShowFace(tileEl) {
+            tileEl.classList.add('flipped');
+            tileEl.innerHTML = tileEl.dataset.icon;
+        }
+        function tileHideFace(tileEl) {
+            tileEl.classList.remove('flipped');
+            if (tileEl.className.includes('tile')) tileEl.innerText = '?';
+        }
+
+        // --- POINTER DRAG ENGINE ---
+        function makeElementDraggable(el, typeId, targetBoxId) {
+            let startX = 0, startY = 0;
+            
+            el.onpointerdown = function(e) {
+                if (isDemoMode || el.classList.contains('faded-error')) return;
+                initAudioContext();
+                pokeActivityEngine();
+                e.preventDefault();
+                el.setPointerCapture(e.pointerId);
+                startX = e.clientX;
+                startY = e.clientY;
+                el.style.transition = "none";
+                
+                el.onpointermove = function(ev) {
+                    // Divide by currentScale so local mouse tracking perfectly aligns with global screen bounds
+                    let deltaX = (ev.clientX - startX) / currentScale;
+                    let deltaY = (ev.clientY - startY) / currentScale;
+                    el.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+                };
+                
+                el.onpointerup = function(ev) {
+                    el.onpointermove = null;
+                    el.onpointerup = null;
+                    
+                    const targetBox = document.getElementById(targetBoxId);
+                    const targetRect = targetBox.getBoundingClientRect();
+                    const elRect = el.getBoundingClientRect();
+                    
+                    const isOverlapping = (
+                        elRect.left < targetRect.right &&
+                        elRect.right > targetRect.left &&
+                        elRect.top < targetRect.bottom &&
+                        elRect.bottom > targetRect.top
+                    );
+                    
+                    if (isOverlapping) {
+                        if (typeId === targetBox.getAttribute('data-accept')) {
+                            handleRoundComplete(targetBox, ev.clientX, ev.clientY);
+                        } else {
+                            el.style.transition = "transform 0.3s ease";
+                            el.style.transform = "translate(0px, 0px)";
+                            trackMistake(el); 
+                        }
+                    } else {
+                        el.style.transition = "transform 0.3s ease";
+                        el.style.transform = "translate(0px, 0px)";
+                    }
+                };
+            };
+        }
+
+        // --- TASK 1: SHAPE SORTING ---
+        const baseShapes = {
+            squareLattice: `<svg class="shape-svg" viewBox="0 0 100 100"><rect x="15" y="15" width="70" height="70" fill="none" stroke="#b91c1c" stroke-width="10"/><path d="M50,15 L50,85 M15,50 L85,50" stroke="#b91c1c" stroke-width="6"/></svg>`,
+            diamondLattice: `<svg class="shape-svg" viewBox="0 0 100 100"><polygon points="50,10 90,50 50,90 10,50" fill="none" stroke="#047857" stroke-width="10"/><path d="M50,10 L50,90 M10,50 L90,50" stroke="#047857" stroke-width="6"/></svg>`,
+            circleLattice: `<svg class="shape-svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="#c2410c" stroke-width="10"/><path d="M21,21 L79,79 M21,79 L79,21" stroke="#c2410c" stroke-width="6"/></svg>`,
+            octagonalLattice: `<svg class="shape-svg" viewBox="0 0 100 100"><polygon points="30,10 70,10 90,30 90,70 70,90 30,90 10,70 10,30" fill="none" stroke="#7e22ce" stroke-width="10"/><circle cx="50" cy="50" r="20" fill="none" stroke="#7e22ce" stroke-width="5"/></svg>`,
+            fanLattice: `<svg class="shape-svg" viewBox="0 0 100 100"><path d="M10,80 C10,30 90,30 90,80 Z" fill="none" stroke="#0369a1" stroke-width="10"/><path d="M50,80 L25,40 M50,80 L50,30 M50,80 L75,40" stroke="#0369a1" stroke-width="6"/></svg>`
+        };
+        
+        function setupShapeGame() {
+            document.getElementById('shape-instruction').innerText = translations[currentLang].instructions.shape;
+            let poolSize = currentRound <= 3 ? 2 : (currentRound <= 7 ? 3 : 5);
+            const baseKeys = Object.keys(baseShapes);
+            const activePoolKeys = baseKeys.slice(0, poolSize);
+            
+            const targetKey = activePoolKeys[Math.floor(Math.random() * activePoolKeys.length)];
+            const dropBox = document.getElementById('shape-target');
+            dropBox.innerHTML = baseShapes[targetKey] + `<span style="font-size:14px; color:#475569; font-weight:bold; margin-top:8px">${translations[currentLang].matchHere}</span>`;
+            dropBox.setAttribute('data-accept', targetKey);
+            
+            const shuffled = [...activePoolKeys].sort(() => Math.random() - 0.5);
+            const container = document.getElementById('shape-options');
+            container.innerHTML = '';
+            
+            let elementToDemo = null;
+            shuffled.forEach(key => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'draggable-item';
+                itemDiv.innerHTML = baseShapes[key];
+                container.appendChild(itemDiv);
+                makeElementDraggable(itemDiv, key, 'shape-target');
+                if (key === targetKey) elementToDemo = itemDiv;
+            });
+
+            currentLevelAnswers = [elementToDemo, dropBox];
+            if (currentRound === 1) {
+                let t = setTimeout(() => runDemonstration(elementToDemo, dropBox, 'drag'), 800);
+                activeDemoTimeoutIds.push(t);
+            }
+        }
+
+        // --- TASK 2: COLOR ASSOCIATION ---
+        const baseColors = [
+            { name: 'Vermilion Red', hex: '#dc2626' },
+            { name: 'Jade Green', hex: '#059669' },
+            { name: 'Imperial Gold', hex: '#eab308' },
+            { name: 'Peacock Blue', hex: '#0284c7' },
+            { name: 'Plum Purple', hex: '#7c3aed' },
+            { name: 'Ink Black', hex: '#1e293b' }
+        ];
+        
+        function setupColorGame() {
+            document.getElementById('color-instruction').innerText = translations[currentLang].instructions.color;
+            let poolSize = currentRound <= 3 ? 2 : (currentRound <= 7 ? 4 : 6);
+            const activePool = baseColors.slice(0, poolSize);
+            
+            const targetColor = activePool[Math.floor(Math.random() * activePool.length)];
+            const dropBox = document.getElementById('color-target-box');
+            document.getElementById('color-target-bucket').style.backgroundColor = targetColor.hex;
+            dropBox.setAttribute('data-accept', targetColor.name);
+            
+            const shuffled = [...activePool].sort(() => Math.random() - 0.5);
+            const container = document.getElementById('color-options');
+            container.innerHTML = '';
+            
+            let elementToDemo = null;
+            shuffled.forEach(color => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'draggable-item';
+                itemDiv.innerHTML = `<div class="color-swatch" style="background-color: ${color.hex}"></div>`;
+                container.appendChild(itemDiv);
+                makeElementDraggable(itemDiv, color.name, 'color-target-box');
+                if (color.name === targetColor.name) elementToDemo = itemDiv;
+            });
+
+            currentLevelAnswers = [elementToDemo, dropBox];
+            if (currentRound === 1) {
+                let t = setTimeout(() => runDemonstration(elementToDemo, dropBox, 'drag'), 800);
+                activeDemoTimeoutIds.push(t);
+            }
+        }
+
+        // --- TASK 3: OBJECT IDENTIFICATION ---
+        const baseObjects = [
+            { name: 'Teapot', icon: '🫖' }, { name: 'Panda', icon: '🐼' },
+            { name: 'Lantern', icon: '🏮' }, { name: 'Dumpling', icon: '🥟' },
+            { name: 'Fan', icon: '🪭' }, { name: 'Jade', icon: '⚱️' }
+        ];
+        
+        function setupObjectIDGame() {
+            let optionCount = currentRound <= 3 ? 2 : (currentRound <= 7 ? 4 : 6);
+            const shuffledPool = [...baseObjects].sort(() => Math.random() - 0.5).slice(0, optionCount);
+            
+            const target = shuffledPool[Math.floor(Math.random() * shuffledPool.length)];
+            window.currentTargetObject = target;
+            
+            document.getElementById('object-instruction').innerText = 
+                translations[currentLang].instructions.objectFind + translations[currentLang].objects[target.name] + "?";
+            
+            const container = document.getElementById('object-options');
+            container.innerHTML = '';
+            container.style.gridTemplateColumns = optionCount === 2 ? 'repeat(2, 1fr)' : (optionCount === 4 ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)');
+            
+            let elementToDemo = null;
+            shuffledPool.forEach(obj => {
+                const btn = document.createElement('button');
+                btn.className = 'object-card';
+                btn.innerHTML = `<span>${obj.icon}</span>`;
+                btn.onclick = (e) => { 
+                    if(isDemoMode || btn.classList.contains('faded-error')) return;
+                    initAudioContext();
+                    pokeActivityEngine();
+                    if (obj.name === target.name) {
+                        handleRoundComplete(btn, e.clientX, e.clientY);
+                    } else {
+                        trackMistake(btn); 
+                    }
+                };
+                container.appendChild(btn);
+                if (obj.name === target.name) elementToDemo = btn;
+            });
+
+            currentLevelAnswers = [elementToDemo];
+            if (currentRound === 1) {
+                let t = setTimeout(() => runDemonstration(elementToDemo, null, 'tap'), 800);
+                activeDemoTimeoutIds.push(t);
+            }
+        }
+
+        // --- TASK 4: MATCHING GAME ---
+        const matchingPool = [
+            { id: 'Teapot', icon: '🫖' }, { id: 'Panda', icon: '🐼' },
+            { id: 'Lantern', icon: '🏮' }, { id: 'Dumpling', icon: '🥟' },
+            { id: 'Fan', icon: '🪭' }, { id: 'Jade', icon: '⚱️' }
+        ];
+        
+        function setupMatchingGame() {
+            document.getElementById('matching-instruction').innerText = translations[currentLang].instructions.matching;
+            let flippedTiles = [];
+            totalMatchesFound = 0;
+            
+            let pairCount = currentRound <= 3 ? 2 : (currentRound <= 7 ? 3 : 4);
+            totalMatchesNeeded = pairCount;
+            
+            let selectedIcons = matchingPool.slice(0, pairCount);
+            let activeCards = [...selectedIcons, ...selectedIcons].sort(() => Math.random() - 0.5);
+            
+            const container = document.getElementById('card-options');
+            container.innerHTML = '';
+            container.style.gridTemplateColumns = `repeat(${pairCount}, 1fr)`;
+            
+            activeCards.forEach((cardObj) => {
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                tile.innerText = '?';
+                tile.dataset.value = cardObj.id;
+                tile.dataset.icon = cardObj.icon;
+                
+                tile.onclick = function(e) {
+                    if (isDemoMode || tile.classList.contains('faded-error')) return;
+                    initAudioContext();
+                    pokeActivityEngine();
+                    
+                    if (flippedTiles.length < 2 && !this.classList.contains('flipped') && !this.classList.contains('matched')) {
+                        tileShowFace(this);
+                        flippedTiles.push(this);
+                        
+                        if (flippedTiles.length === 2) {
+                            if (flippedTiles[0].dataset.value === flippedTiles[1].dataset.value) {
+                                let matchA = flippedTiles[0];
+                                let matchB = flippedTiles[1];
+                                flippedTiles = [];
+                                
+                                totalMatchesFound++;
+                                refreshMatchingHintTargets();
+                                
+                                matchA.classList.add('instant-success');
+                                matchB.classList.add('instant-success');
+                                triggerSuccessBurst(e.clientX, e.clientY);
+                                
+                                setTimeout(() => {
+                                    matchA.classList.remove('instant-success');
+                                    matchB.classList.remove('instant-success');
+                                    matchA.classList.add('matched');
+                                    matchB.classList.add('matched');
+                                    
+                                    if (totalMatchesFound === totalMatchesNeeded) {
+                                        setTimeout(() => handleRoundComplete(null, null, null), 100);
+                                    } else {
+                                        triggerHaptic('success');
+                                        playFeedbackSound('success');
+                                    }
+                                }, 400);
+                            } else {
+                                let tileA = flippedTiles[0];
+                                let tileB = flippedTiles[1];
+                                flippedTiles = [];
+
+                                setTimeout(() => {
+                                    tileHideFace(tileA);
+                                    tileHideFace(tileB);
+                                    trackMistake(null);
+                                }, 800);
+                            }
+                        }
+                    }
+                };
+                container.appendChild(tile);
+            });
+
+            function refreshMatchingHintTargets() {
+                const remainingTiles = Array.from(document.querySelectorAll('.tile:not(.matched)'));
+                if (remainingTiles.length > 0) {
+                    const sampleId = remainingTiles[0].dataset.value;
+                    currentLevelAnswers = remainingTiles.filter(t => t.dataset.value === sampleId);
+                }
+            }
+            
+            refreshMatchingHintTargets();
+            if (currentRound === 1) {
+                let t = setTimeout(() => {
+                    const tiles = Array.from(document.querySelectorAll('.tile'));
+                    const demoVal = tiles[0].dataset.value;
+                    const matches = tiles.filter(t => t.dataset.value === demoVal);
+                    runDemonstration(matches[0], null, 'tap', matches[1]);
+                }, 1000);
+                activeDemoTimeoutIds.push(t);
+            }
+        }
+
+        function startApp() {
+            initAudioContext();
+            document.getElementById('start-screen').classList.add('hidden');
+            initGame();
+        }
+
+        document.getElementById('lang-button').innerText = translations[currentLang].langName;
+    </script>
+</body>
+</html>
