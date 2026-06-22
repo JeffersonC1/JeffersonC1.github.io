@@ -1,0 +1,2535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Therapeutic Cognitive Engagement App</title>
+    <style>
+        :root {
+            --bg-color: #f6f2eb;
+            --text-color: #2c1e11;
+            --hint-color: #c2410c;
+            --success-flash: #15803d;
+            --card-bg: #ffffff;
+            --header-bg: #e2e8f0;
+            --primary-font: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+
+        * { touch-action: manipulation; }
+        html, body { touch-action: none; -ms-touch-action: none; }
+
+        body {
+            font-family: var(--primary-font);
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+            overflow: hidden;
+            touch-action: none;
+            overscroll-behavior: none;
+        }
+
+        #ipad-container {
+            width: 850px;
+            height: 600px;
+            background: #faf9f6;
+            border: 16px solid var(--text-color);
+            border-radius: 36px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform-origin: center center;
+            transform: translate(-50%, -50%) scale(1);
+            display: flex;
+            flex-direction: column;
+            padding: 30px;
+            box-sizing: border-box;
+            will-change: transform;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        h1 { font-size: 28px; color: var(--text-color); margin: 0; }
+
+        .right-header-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #progress {
+            font-size: 18px;
+            background: #ecdcc4;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        .btn-primary {
+            font-family: var(--primary-font);
+            font-size: 15px;
+            font-weight: bold;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        #home-screen:not(.hidden) ~ #home-button { display: none; }
+        #home-button {
+            background: #94a3b8;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-size: 10px;
+            padding: 3px 7px;
+            opacity: 0.55;
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            overflow: hidden;
+            transition: opacity 0.2s, background 0.2s;
+            z-index: 1000;
+            border-radius: 10px;
+        }
+        #home-button:hover, #home-button:active { background: #64748b; opacity: 1; }
+        #home-button .hold-fill {
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 0%;
+            background: rgba(15,118,110,0.85);
+            transition: width 0.05s linear;
+            pointer-events: none;
+            z-index: 0;
+        }
+        #home-button .home-label { position: relative; z-index: 1; }
+
+        #lang-button { background: #b91c1c; box-shadow: 0 4px 6px rgba(185, 28, 28, 0.15); }
+        #lang-button:hover { background: #991b1b; }
+
+
+
+        .game-screen {
+            flex-grow: 1;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-around;
+            position: relative;
+            transition: opacity 1.2s ease-in-out;
+        }
+        .active { display: flex; }
+
+        .instruction {
+            font-size: 28px;
+            color: var(--text-color);
+            font-weight: bold;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        .game-zone {
+            display: flex;
+            width: 100%;
+            justify-content: space-around;
+            align-items: center;
+            flex-grow: 1;
+            position: relative;
+        }
+
+        .drop-target {
+            width: 260px; height: 260px;
+            border: 5px dashed var(--hint-color);
+            border-radius: 30px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            background: var(--card-bg);
+            transition: all 0.2s ease;
+        }
+        .drop-target.instant-success {
+            background-color: #f0fdf4 !important;
+            border: 5px solid var(--success-flash) !important;
+            transform: scale(1.05);
+        }
+
+        .draggable-source-container {
+            display: flex; flex-wrap: wrap; gap: 24px;
+            background: #ecdcc4; padding: 30px;
+            border-radius: 24px; max-width: 420px;
+            justify-content: center; align-items: center;
+        }
+
+        .draggable-item {
+            touch-action: none;
+            cursor: grab;
+            position: relative;
+            z-index: 5;
+            transition: opacity 0.3s ease;
+        }
+
+        .shape-svg { width: 110px; height: 110px; pointer-events: none; }
+        .drop-target .shape-svg { opacity: 0.2; }
+
+        .color-swatch {
+            width: 110px; height: 110px;
+            border-radius: 24px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            pointer-events: none;
+        }
+        .color-bucket { width: 180px; height: 180px; border-radius: 50%; }
+
+        .object-grid { display: grid; gap: 24px; justify-content: center; }
+        .object-target {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            margin: 4px auto 14px;
+            background: #fffaf0;
+            border: 4px solid #ecdcc4;
+            border-radius: 24px;
+            padding: 10px 28px;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+        }
+        .object-target .target-icon { font-size: 96px; line-height: 1; }
+        .object-card {
+            background: var(--card-bg);
+            border: 3px solid #ecdcc4;
+            border-radius: 24px;
+            padding: 14px;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            cursor: pointer;
+            width: 150px; height: 150px;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+        .object-card .obj-icon { font-size: 80px; pointer-events: none; line-height: 1; }
+        .object-card.demo-pressed {
+            transform: scale(0.9);
+            background-color: #e2e8f0;
+            border-color: #b91c1c;
+        }
+        .object-card.instant-success {
+            background-color: #f0fdf4 !important;
+            border-color: var(--success-flash) !important;
+            transform: scale(1.05);
+        }
+
+        .card-grid { display: grid; gap: 24px; justify-content: center; }
+        .tile {
+            width: 150px; height: 180px;
+            background: #ffffff;
+            border: 3px solid #e2e8f0;
+            border-radius: 20px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 80px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.10);
+            cursor: pointer;
+            transition: transform 0.25s ease, border-color 0.25s ease, background-color 0.25s ease, opacity 0.4s ease;
+        }
+        .tile.selected {
+            border-color: var(--hint-color);
+            background-color: #fffbeb;
+            transform: translateY(-4px) scale(1.04);
+        }
+        .tile.instant-success {
+            border-color: var(--success-flash) !important;
+            background-color: #f0fdf4 !important;
+        }
+        .tile.matched { opacity: 0.35; pointer-events: none; border-color: #cbd5e1; box-shadow: none; }
+
+        .hint-pulse {
+            animation: gentleGlow 1.4s infinite alternate ease-in-out;
+            z-index: 10 !important;
+        }
+        @keyframes gentleGlow {
+            0% { transform: scale(1); filter: drop-shadow(0 0 2px var(--hint-color)); }
+            100% { transform: scale(1.04); filter: drop-shadow(0 0 14px var(--hint-color)); border-color: var(--hint-color); }
+        }
+        /* Jigsaw pieces are transparent SVGs and drag uses inline transforms,
+           so use a transform-free glow + outline so the hint stays visible. */
+        .jigsaw-piece.hint-pulse,
+        .jigsaw-slot.hint-pulse {
+            animation: jigsawHintGlow 1.2s infinite alternate ease-in-out;
+            z-index: 12 !important;
+        }
+        @keyframes jigsawHintGlow {
+            0%   { filter: drop-shadow(0 0 1px var(--hint-color)); }
+            100% { filter: drop-shadow(0 0 10px var(--hint-color)) drop-shadow(0 0 18px var(--hint-color)); }
+        }
+        .jigsaw-slot.hint-pulse {
+            box-shadow: 0 0 0 3px var(--hint-color), 0 0 18px var(--hint-color);
+            border-color: var(--hint-color) !important;
+        }
+
+        .faded-error {
+            opacity: 0.15 !important;
+            pointer-events: none !important;
+            cursor: default !important;
+            box-shadow: none !important;
+            transition: none !important;
+            filter: saturate(0.4);
+        }
+
+        .success-particle {
+            position: absolute;
+            pointer-events: none;
+            font-size: 26px;
+            z-index: 99;
+            transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.6s ease;
+            transform: translate(-50%, -50%);
+        }
+
+        /* --- DEMONSTRATION ENGINE --- */
+        #input-lock-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.01);
+            border-radius: 20px;
+            display: none;
+            z-index: 90;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 20px;
+        }
+        .banner-msg {
+            background: var(--hint-color);
+            color: white;
+            padding: 12px 36px;
+            border-radius: 30px;
+            font-size: 26px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        #demo-pointer {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background-color: rgba(194, 65, 12, 0.5);
+            border: 3px solid rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 95;
+            display: none;
+            box-shadow: 0 0 12px rgba(0,0,0,0.25);
+            transform-origin: center;
+        }
+
+        /* --- HOME / GAME SELECTION SCREEN --- */
+        #home-screen {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(160deg, #faf3e3 0%, #f1d9a8 100%);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            z-index: 200;
+            text-align: center;
+            padding: 30px;
+            box-sizing: border-box;
+            transition: opacity 0.6s ease-in-out;
+        }
+        #home-screen.hidden { display: none; }
+        #home-screen .logo { font-size: 64px; margin: 0 0 6px 0; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.15)); }
+        #home-screen h1 { font-size: 32px; color: var(--text-color); margin: 0 0 4px 0; }
+        #home-screen p { font-size: 17px; color: #6b4f2a; margin: 0 0 16px 0; }
+        #home-lang {
+            position: absolute; top: 16px; right: 16px;
+            background: var(--text-color) !important;
+            color: #fff !important;
+        }
+        #game-menu {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px;
+            width: 100%;
+            max-width: 560px;
+            margin-top: 10px;
+        }
+        .menu-card {
+            background: var(--card-bg);
+            border: 3px solid #ecdcc4;
+            border-radius: 22px;
+            padding: 18px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+            min-height: 140px;
+        }
+        .menu-card:hover, .menu-card:active {
+            transform: translateY(-3px);
+            border-color: var(--hint-color);
+            box-shadow: 0 10px 22px rgba(0,0,0,0.14);
+        }
+        .menu-card .menu-icon { font-size: 56px; line-height: 1; }
+        .menu-card .menu-label { font-size: 18px; font-weight: 700; color: var(--text-color); }
+
+        /* --- TRANSITION VEIL --- */
+        #transition-veil {
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            z-index: 300;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: linear-gradient(160deg, #f3e7d0 0%, #e8c79a 55%, #d6a76b 100%);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.8s ease-in-out;
+            box-sizing: border-box;
+            padding: 40px;
+        }
+        #transition-veil.visible { opacity: 1; pointer-events: auto; }
+        #transition-veil .veil-art {
+            font-size: 130px;
+            filter: drop-shadow(0 8px 18px rgba(0,0,0,0.18));
+            margin-bottom: 14px;
+            animation: veil-breathe 3s ease-in-out infinite;
+        }
+        #transition-veil .veil-text { font-size: 22px; color: #6b4f2a; font-weight: 600; }
+        @keyframes veil-breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        /* --- CAREGIVER ACCESS --- */
+        #caregiver-dot {
+            position: absolute;
+            bottom: 8px; right: 8px;
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            background: rgba(120, 113, 108, 0.18);
+            z-index: 400;
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+        #caregiver-dot.charging { background: rgba(194, 65, 12, 0.7); transform: scale(1.15); }
+
+        #caregiver-overlay {
+            position: fixed; inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            z-index: 9998;
+            display: none;
+            align-items: center; justify-content: center;
+        }
+        #caregiver-overlay.visible { display: flex; }
+        #caregiver-panel {
+            background: #fff;
+            width: 480px; max-width: 92vw; max-height: 86vh;
+            overflow-y: auto;
+            border-radius: 18px;
+            padding: 26px 28px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+            font-family: var(--primary-font);
+            position: relative;
+        }
+        #caregiver-close {
+            position: absolute; top: 10px; right: 14px;
+            background: transparent; border: none;
+            font-size: 28px; cursor: pointer; color: #64748b;
+        }
+        .cg-section { border-top: 1px solid #e2e8f0; padding-top: 14px; margin-top: 14px; }
+        .cg-section:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+        .cg-section h3 { margin: 0 0 10px 0; font-size: 16px; color: #2c1e11; }
+        .cg-label { display: block; font-size: 13px; color: #475569; margin-bottom: 10px; }
+        .cg-label input, .cg-label select {
+            display: block; width: 100%; margin-top: 4px;
+            padding: 8px 10px; border: 1px solid #cbd5e1;
+            border-radius: 8px; font-size: 15px;
+            font-family: var(--primary-font); box-sizing: border-box;
+        }
+        .cg-btn {
+            background: var(--hint-color); color: #fff;
+            border: none; padding: 9px 16px;
+            border-radius: 10px; font-weight: bold;
+            font-family: var(--primary-font); cursor: pointer; font-size: 14px;
+        }
+        .cg-btn-alt { background: #475569; }
+        #cg-session-log {
+            font-size: 13px; color: #334155;
+            background: #f8fafc; border: 1px solid #e2e8f0;
+            border-radius: 10px; padding: 10px 12px;
+            line-height: 1.55; max-height: 360px; overflow-y: auto;
+        }
+        #cg-session-log table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        #cg-session-log th, #cg-session-log td { padding: 4px 6px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        #cg-session-log th { color: #64748b; font-weight: 600; }
+
+        /* --- JIGSAW PUZZLE --- */
+        #jigsaw .game-zone { gap: 18px; flex-direction: column; justify-content: flex-start; }
+        .jigsaw-board {
+            display: grid;
+            gap: 0; /* pieces interlock — no visual gap between cells */
+            background: #ecdcc4;
+            padding: 14px;
+            border-radius: 20px;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.10), inset 0 0 0 3px var(--hint-color);
+            transition: box-shadow 0.4s ease, transform 0.4s ease;
+        }
+        .jigsaw-board-complete {
+            box-shadow: 0 10px 28px rgba(21, 128, 61, 0.30),
+                        inset 0 0 0 3px var(--success-flash);
+            transform: scale(1.015);
+        }
+        .jigsaw-board-complete .jigsaw-slot {
+            background: transparent !important;
+            border-color: transparent !important;
+        }
+
+        /* === Cinematic finish sequence === */
+        .jigsaw-cinema-dim {
+            position: absolute; inset: 0;
+            background: radial-gradient(ellipse at center,
+                rgba(0,0,0,0.0) 0%,
+                rgba(0,0,0,0.45) 55%,
+                rgba(0,0,0,0.78) 100%);
+            z-index: 55; pointer-events: none;
+            opacity: 0;
+            animation: cinemaDimIn 0.9s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            will-change: opacity;
+        }
+        @keyframes cinemaDimIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+        @keyframes cinemaDimOut {
+            from { opacity: 1; }
+            to   { opacity: 0; }
+        }
+        .jigsaw-cinema-board {
+            position: relative;
+            z-index: 58;
+            animation: cinemaBoardReveal 4.6s cubic-bezier(0.33, 0, 0.2, 1) forwards;
+            transform-origin: center center;
+            filter: drop-shadow(0 18px 38px rgba(0,0,0,0.45));
+            will-change: transform, filter;
+            backface-visibility: hidden;
+        }
+        @keyframes cinemaBoardReveal {
+            0%   { transform: scale(1)      translateY(0); }
+            35%  { transform: scale(1.09)   translateY(-7px); }
+            70%  { transform: scale(1.115)  translateY(-10px); }
+            100% { transform: scale(1.10)   translateY(-9px); }
+        }
+        .jigsaw-cinema-title {
+            position: absolute; z-index: 60; pointer-events: none;
+            left: 0; right: 0; text-align: center;
+            color: #fff8e7;
+            font-family: 'Georgia', 'Cormorant Garamond', serif;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            text-shadow: 0 2px 18px rgba(0,0,0,0.55);
+            opacity: 0;
+            animation: cinemaTitleIn 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.7s forwards;
+            will-change: opacity, transform, letter-spacing;
+        }
+        .jigsaw-cinema-title .eyebrow {
+            font-size: 14px; letter-spacing: 0.42em;
+            color: #ffd980;
+            margin-bottom: 8px;
+            opacity: 0.92;
+        }
+        .jigsaw-cinema-title .name {
+            font-size: 42px; font-weight: 600;
+            letter-spacing: 0.22em;
+        }
+        @keyframes cinemaTitleIn {
+            from { opacity: 0; transform: translateY(18px); letter-spacing: 0.10em; }
+            to   { opacity: 1; transform: translateY(0);    letter-spacing: 0.22em; }
+        }
+        @keyframes cinemaTitleOut {
+            from { opacity: 1; transform: translateY(0); }
+            to   { opacity: 0; transform: translateY(-10px); }
+        }
+        .jigsaw-cinema-sparkle {
+            position: absolute; z-index: 59; pointer-events: none;
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #fff8c8 0%, #ffd66b 55%, rgba(255,180,80,0) 100%);
+            opacity: 0;
+            animation: cinemaSparkle 2.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            will-change: opacity, transform;
+        }
+        @keyframes cinemaSparkle {
+            0%   { opacity: 0; transform: scale(0.2) translate(0,0); }
+            18%  { opacity: 1; transform: scale(1) translate(calc(var(--dx) * 0.15), calc(var(--dy) * 0.15)); }
+            100% { opacity: 0; transform: scale(1.4) translate(var(--dx), var(--dy)); }
+        }
+        .jigsaw-cinema-fadeout {
+            animation: cinemaDimOut 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+        }
+
+        .jigsaw-slot {
+            /* Softer contrast for empty slots — warm muted cavity with a gentle dashed border. */
+            background: rgba(90, 60, 30, 0.18);
+            border: 1.5px dashed rgba(120, 80, 40, 0.55);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.15);
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+            overflow: hidden; /* keep faint guide confined to the slot box */
+            transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .jigsaw-slot.filled {
+            border-color: transparent;
+            background: transparent;
+            box-shadow: none;
+            overflow: visible; /* allow piece tabs to extend over neighbours */
+        }
+        .jigsaw-slot.instant-success {
+            transform: scale(1.03);
+        }
+        /* Horizontal scrollable tray — pieces sit on a single bar you can swipe through. */
+        .jigsaw-tray {
+            display: flex; flex-wrap: nowrap; gap: 10px;
+            background: #ecdcc4; padding: 14px 18px;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: var(--hint-color) #ecdcc4;
+            align-items: center;
+            justify-content: flex-start;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.08);
+            margin-bottom: 40px;
+        }
+        .jigsaw-tray::-webkit-scrollbar { height: 10px; }
+        .jigsaw-tray::-webkit-scrollbar-track { background: #ecdcc4; border-radius: 10px; }
+        .jigsaw-tray::-webkit-scrollbar-thumb { background: var(--hint-color); border-radius: 10px; }
+        .jigsaw-piece { flex: 0 0 auto; }
+        .jigsaw-piece {
+            touch-action: none;
+            cursor: grab;
+            background: transparent;
+            position: relative;
+            z-index: 5;
+            transition: opacity 0.3s ease;
+            /* Cheap composited shadow — replaces per-piece SVG feDropShadow,
+               which compounded badly as more pieces appeared on the board. */
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.32));
+        }
+        .jigsaw-piece.dragging {
+            will-change: transform;
+            filter: drop-shadow(0 4px 4px rgba(0,0,0,0.35));
+        }
+        .jigsaw-piece.placed {
+            cursor: default;
+            /* Once placed, drop the shadow entirely — placed pieces tile
+               edge-to-edge so the shadow isn't visible anyway, and removing
+               it keeps the composited board cheap as the puzzle fills in. */
+            filter: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ipad-container">
+
+        <!-- HOME / GAME-SELECTION SCREEN -->
+        <div id="home-screen">
+            <button id="home-lang" class="btn-primary" onclick="toggleLanguage()">🌐 English</button>
+            <div class="logo">🏮</div>
+            <h1 id="home-title">Choose a game</h1>
+            <p id="home-subtitle">Pick any activity. You can return here any time.</p>
+            <div id="game-menu"></div>
+        </div>
+
+        <div id="transition-veil" aria-hidden="true">
+            <div class="veil-art">🍵</div>
+            <div class="veil-text" id="veil-text">Take a gentle breath…</div>
+        </div>
+
+        <header>
+            <h1 id="game-title">Shape Sorting</h1>
+            <div class="right-header-controls">
+                <button id="lang-button" class="btn-primary" onclick="toggleLanguage()">🌐 English</button>
+                <div id="progress">Round: 1</div>
+            </div>
+        </header>
+        <button id="home-button" class="btn-primary" title="Press and hold to exit"><span class="hold-fill"></span><span class="home-label">🏠 Hold to exit</span></button>
+
+        <!-- Demonstration overlay (locks input while the demo plays) -->
+        <div id="input-lock-overlay">
+            <div class="banner-msg" id="lock-banner">👀 Watch the Demo!</div>
+        </div>
+        <div id="demo-pointer"></div>
+
+        <div id="caregiver-dot" title="Caregiver" aria-label="Caregiver access"></div>
+
+        <div id="caregiver-overlay" aria-hidden="true">
+            <div id="caregiver-panel">
+                <button id="caregiver-close" onclick="closeCaregiverPanel()">×</button>
+                <h2 style="margin:0 0 4px 0; font-size:22px; color:#2c1e11;">Caregiver Panel</h2>
+                <p style="margin:0 0 14px 0; font-size:13px; color:#6b4f2a;">Private — not visible to the patient.</p>
+
+                <div class="cg-section">
+                    <h3>Patient & Theme</h3>
+                    <label class="cg-label">Patient name
+                        <input id="cg-name" type="text" placeholder="e.g. Margaret" />
+                    </label>
+                    <label class="cg-label">Theme
+                        <select id="cg-theme">
+                            <option value="cultural">Cultural (default)</option>
+                            <option value="garden">Garden</option>
+                            <option value="cooking">Cooking</option>
+                            <option value="pets">Family pets</option>
+                        </select>
+                    </label>
+                    <button class="cg-btn" onclick="applyCaregiverSettings()">Save</button>
+                </div>
+
+                <div class="cg-section">
+                    <h3>Session log</h3>
+                    <div id="cg-session-log">No session data yet.</div>
+                    <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+                        <button class="cg-btn" onclick="exportSessionEmail()">✉️ Email report</button>
+                        <button class="cg-btn cg-btn-alt" onclick="copySessionReport(this)">📋 Copy report</button>
+                    </div>
+                    <label class="cg-label" style="margin-top:10px;">Send report to (optional)
+                        <input id="cg-email" type="email" placeholder="caregiver@example.com" />
+                    </label>
+                </div>
+
+                <div class="cg-section">
+                    <h3>Controls</h3>
+                    <div id="cg-difficulty" style="margin-bottom:10px; font-size:13px; color:#475569;"></div>
+                    <button class="cg-btn cg-btn-alt" onclick="closeCaregiverPanel(); goHome();">Back to Home 🏠</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="shapeSorting" class="game-screen">
+            <div class="instruction" id="shape-instruction">Drag the shape into the matching box!</div>
+            <div class="game-zone">
+                <div class="drop-target" id="shape-target" data-accept=""></div>
+                <div class="draggable-source-container" id="shape-options"></div>
+            </div>
+        </div>
+
+        <div id="colorSorting" class="game-screen">
+            <div class="instruction" id="color-instruction">Drag the block into the matching color bucket!</div>
+            <div class="game-zone">
+                <div class="drop-target" id="color-target-box" data-accept="">
+                    <div class="color-bucket" id="color-target-bucket"></div>
+                </div>
+                <div class="draggable-source-container" id="color-options"></div>
+            </div>
+        </div>
+
+        <div id="objectID" class="game-screen">
+            <div class="instruction" id="object-instruction">Find this one below:</div>
+            <div class="object-target" id="object-target"></div>
+            <div class="object-grid" id="object-options"></div>
+        </div>
+
+        <div id="matching" class="game-screen">
+            <div class="instruction" id="matching-instruction">Find ALL the matching pairs!</div>
+            <div class="card-grid" id="card-options"></div>
+        </div>
+
+        <div id="jigsaw" class="game-screen">
+            <div class="instruction" id="jigsaw-instruction">Place each piece on the picture.</div>
+            <div class="game-zone">
+                <div class="jigsaw-board" id="jigsaw-board"></div>
+                <div class="jigsaw-tray" id="jigsaw-tray"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ===== Block double-tap zoom, pinch zoom, gesture events on iOS =====
+        document.addEventListener('gesturestart', e => e.preventDefault());
+        document.addEventListener('gesturechange', e => e.preventDefault());
+        document.addEventListener('gestureend', e => e.preventDefault());
+        let __lastTouchEnd = 0;
+        document.addEventListener('touchend', function (e) {
+            // Only block rapid repeats from a single finger (double-tap zoom).
+            // Never block when multiple fingers are involved — we want simultaneous taps to register.
+            if (e.touches && e.touches.length > 0) return;
+            if (e.changedTouches && e.changedTouches.length > 1) return;
+            const now = Date.now();
+            if (now - __lastTouchEnd <= 350) { e.preventDefault(); }
+            __lastTouchEnd = now;
+        }, { passive: false });
+        document.addEventListener('touchmove', function (e) {
+            // Prevent pinch-zoom gestures, but only when fingers actually move together.
+            if (e.touches && e.touches.length > 1 && e.scale && e.scale !== 1) { e.preventDefault(); }
+        }, { passive: false });
+        document.addEventListener('wheel', function (e) {
+            if (e.ctrlKey) e.preventDefault();
+        }, { passive: false });
+
+        // ===== Cross-fade veil =====
+        const VEIL_ART = ['🍵','🌅','🌿','🏞️','🌸','🕯️'];
+        function crossfadeTransition(swapFn, holdMs) {
+            const veil = document.getElementById('transition-veil');
+            const art = veil.querySelector('.veil-art');
+            art.textContent = VEIL_ART[Math.floor(Math.random() * VEIL_ART.length)];
+            veil.classList.add('visible');
+            const hold = holdMs ?? 400;
+            setTimeout(() => {
+                try { swapFn && swapFn(); } catch (e) { console.error(e); }
+                setTimeout(() => { veil.classList.remove('visible'); }, hold);
+            }, 800);
+        }
+
+
+        // ===== Responsive scaling (iPad Safari aware) =====
+        let currentScale = 1;
+        const _ipadEl = document.getElementById('ipad-container');
+        function _computeViewport() {
+            const vv = window.visualViewport;
+            return {
+                w: vv ? vv.width  : window.innerWidth,
+                h: vv ? vv.height : window.innerHeight,
+            };
+        }
+        function resizeGame() {
+            const { w, h } = _computeViewport();
+            // Extra vertical padding so the iPad frame (and the puzzle tray inside it)
+            // never sits flush against Safari's bottom toolbar on iOS/iPadOS.
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            const padX = 8;
+            const padY = isIOS ? 80 : 8;
+            const scaleX = (w - padX) / 850;
+            const scaleY = (h - padY) / 600;
+            currentScale = Math.min(scaleX, scaleY);
+            _ipadEl.style.transform = `translate(-50%, -50%) scale(${currentScale})`;
+        }
+
+        let _resizeRaf = 0;
+        function _scheduleResize() {
+            if (_resizeRaf) return;
+            _resizeRaf = requestAnimationFrame(() => { _resizeRaf = 0; resizeGame(); });
+        }
+        window.addEventListener('resize', _scheduleResize, { passive: true });
+        window.addEventListener('orientationchange', _scheduleResize, { passive: true });
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', _scheduleResize, { passive: true });
+            window.visualViewport.addEventListener('scroll', _scheduleResize, { passive: true });
+        }
+        resizeGame();
+
+        // ===== Game state =====
+        let currentRound = 1;
+        let games = ['shapeSorting', 'colorSorting', 'objectID', 'matching', 'jigsaw'];
+        let currentGameId = null;
+        let totalMatchesNeeded = 0;
+        let totalMatchesFound = 0;
+        let currentLang = 'en';
+
+        // Demo engine state
+        let isDemoMode = false;
+        let activeDemoTimeoutIds = [];
+
+        // ===== Themes =====
+        const themePacks = {
+            cultural: { label: 'Cultural', objects: [
+                { name: 'Tea', icon: '🫖' }, { name: 'Cup', icon: '☕' },
+                { name: 'Lantern', icon: '🏮' }, { name: 'Chopsticks', icon: '🥢' },
+                { name: 'Fan', icon: '🪭' }, { name: 'Flower', icon: '🌸' } ]},
+            garden:   { label: 'Garden',   objects: [
+                { name: 'Sunflower', icon: '🌻' }, { name: 'Flower', icon: '🌼' },
+                { name: 'Tree', icon: '🌳' }, { name: 'Leaf', icon: '🍃' },
+                { name: 'Butterfly', icon: '🦋' }, { name: 'Bee', icon: '🐝' } ]},
+            cooking:  { label: 'Cooking',  objects: [
+                { name: 'Bread', icon: '🍞' }, { name: 'Apple', icon: '🍎' },
+                { name: 'Cheese', icon: '🧀' }, { name: 'Egg', icon: '🥚' },
+                { name: 'Cake', icon: '🍰' }, { name: 'Milk', icon: '🥛' } ]},
+            pets:     { label: 'Family pets', objects: [
+                { name: 'Dog', icon: '🐶' }, { name: 'Cat', icon: '🐱' },
+                { name: 'Rabbit', icon: '🐰' }, { name: 'Bird', icon: '🐦' },
+                { name: 'Fish', icon: '🐠' }, { name: 'Horse', icon: '🐴' } ]}
+        };
+        let currentTheme = 'cultural';
+        let patientName = '';
+        function getThemeObjects() { return themePacks[currentTheme].objects; }
+
+        // ===== Session log =====
+        const sessionLog = { startTime: Date.now(), perGame: {} };
+        function ensureGameLog(g) {
+            if (!sessionLog.perGame[g]) {
+                sessionLog.perGame[g] = { rounds: 0, mistakes: 0, hintFires: 0, idleSamples: [], durations: [] };
+            }
+            return sessionLog.perGame[g];
+        }
+        let idleSampleStart = 0;
+        function noteIdleSampleStart() { idleSampleStart = performance.now(); }
+        function noteIdleSampleEnd(gameId, hintFired) {
+            if (!idleSampleStart) return;
+            const ms = performance.now() - idleSampleStart;
+            if (hintFired) ensureGameLog(gameId).idleSamples.push(ms);
+            idleSampleStart = 0;
+        }
+
+        // ===== Engagement / idle tracker =====
+        // Counts time spent actively interacting vs idle (no input for >= threshold).
+        const IDLE_THRESHOLD_MS = 30000; // 30s without input = idle
+        const engagement = {
+            sessionStart: Date.now(),
+            lastActivity: Date.now(),
+            lastTick: Date.now(),
+            activeMs: 0,
+            idleMs: 0,
+            wasIdle: false,
+            idleEvents: [], // { startedAt, endedAt, durationMs, gameId }
+            currentIdleStart: null,
+            currentIdleGame: null,
+        };
+        function noteUserActivity() {
+            const now = Date.now();
+            // If we were idle, close out the idle event.
+            if (engagement.wasIdle && engagement.currentIdleStart) {
+                engagement.idleEvents.push({
+                    startedAt: engagement.currentIdleStart,
+                    endedAt: now,
+                    durationMs: now - engagement.currentIdleStart,
+                    gameId: engagement.currentIdleGame || currentGameId || 'home',
+                });
+                engagement.currentIdleStart = null;
+                engagement.currentIdleGame = null;
+            }
+            engagement.wasIdle = false;
+            engagement.lastActivity = now;
+        }
+        setInterval(() => {
+            const now = Date.now();
+            const delta = now - engagement.lastTick;
+            engagement.lastTick = now;
+            const sinceInput = now - engagement.lastActivity;
+            if (sinceInput >= IDLE_THRESHOLD_MS) {
+                if (!engagement.wasIdle) {
+                    engagement.wasIdle = true;
+                    // Idle started at the moment input ceased (lastActivity).
+                    engagement.currentIdleStart = engagement.lastActivity;
+                    engagement.currentIdleGame = currentGameId || 'home';
+                }
+                engagement.idleMs += delta;
+            } else {
+                engagement.activeMs += delta;
+            }
+        }, 1000);
+        // Global activity capture
+        ['pointerdown','pointermove','keydown','touchstart'].forEach(ev => {
+            window.addEventListener(ev, noteUserActivity, { passive: true, capture: true });
+        });
+
+        // ===== Translations =====
+        const translations = {
+            en: {
+                langName: "🌐 English", round: "Round", home: "🏠 Hold to exit",
+                homeTitle: "Choose a game", homeSubtitle: "Pick any activity. You can return here any time.",
+                watchDemo: "👀 Watch the Demo!", yourTurn: "✨ Your Turn!",
+                titles: { shapeSorting: "Lattice Shapes", colorSorting: "Traditional Colors", objectID: "Cultural Objects", matching: "Memory Matching", jigsaw: "Jigsaw Picture" },
+                instructions: {
+                    shape: "Find the matching lattice silhouette.",
+                    color: "Place the color piece into its matching container.",
+                    matching: "Find the cards that belong together.",
+                    objectFind: "Tap the picture that matches the one above.",
+                    jigsaw: "Drag each piece onto its matching spot on the picture."
+                },
+                matchHere: "Place Here",
+                diffEasy: "Easy Focus", diffMed: "Standard Focus", diffHard: "Deep Focus",
+                objects: { Tea: "Tea", Cup: "Cup", Lantern: "Lantern", Chopsticks: "Chopsticks", Fan: "Fan", Flower: "Flower" }
+            },
+            'zh-cn': {
+                langName: "🌐 简体中文", round: "关卡", home: "🏠 长按退出",
+                homeTitle: "请选择一个游戏", homeSubtitle: "随时可以返回主页。",
+                watchDemo: "👀 请看演示", yourTurn: "✨ 请您试一试",
+                titles: { shapeSorting: "窗棂图形", colorSorting: "传统色彩", objectID: "物象识别", matching: "记忆连连看", jigsaw: "拼图画" },
+                instructions: {
+                    shape: "请把对应的花窗形状放进虚线框中。",
+                    color: "请把色彩块放进相同古典颜色的圆桶中。",
+                    matching: "请翻出两张图案相同的吉祥卡片。",
+                    objectFind: "请点选与上方相同的图片。",
+                    jigsaw: "请把每块拼图放回画面上对应的位置。"
+                },
+                matchHere: "请放这里",
+                diffEasy: "难度: 轻松", diffMed: "难度: 适中", diffHard: "难度: 挑战",
+                objects: { Tea: "茶", Cup: "杯子", Lantern: "灯笼", Chopsticks: "筷子", Fan: "扇子", Flower: "花" }
+            },
+            'zh-hk': {
+                langName: "🌐 繁體中文", round: "關卡", home: "🏠 長按退出",
+                homeTitle: "請揀一個遊戲", homeSubtitle: "任何時候都可以返回主頁。",
+                watchDemo: "👀 請睇示範", yourTurn: "✨ 請您試下",
+                titles: { shapeSorting: "形狀配對", colorSorting: "傳統色彩", objectID: "物象識別", matching: "記憶翻牌子", jigsaw: "拼圖畫" },
+                instructions: {
+                    shape: "請將對應嘅花窗形狀拖入虛線框度啦。",
+                    color: "請將色彩塊放入相同古典顏色嘅圓桶度啦。",
+                    matching: "請搵出兩張圖案相同嘅吉祥卡片。",
+                    objectFind: "請㩒同上面一樣嘅圖片。",
+                    jigsaw: "請將每塊拼圖放返畫面上對應嘅位置。"
+                },
+                matchHere: "請擺呢度",
+                diffEasy: "難度: 輕鬆", diffMed: "難度: 適中", diffHard: "難度: 挑戰",
+                objects: { Tea: "茶", Cup: "杯", Lantern: "燈籠", Chopsticks: "筷子", Fan: "扇", Flower: "花" }
+            }
+        };
+
+        // ===== Audio / haptics =====
+        let audioCtx = null;
+        function initAudioContext() {
+            if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+        function playFeedbackSound(type) {
+            try {
+                initAudioContext();
+                const now = audioCtx.currentTime;
+                if (type === 'success') {
+                    [440, 554.37, 659.25].forEach((freq, idx) => {
+                        const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+                        osc.type = 'sine'; osc.frequency.setValueAtTime(freq, now + idx*0.04);
+                        gain.gain.setValueAtTime(0.12, now + idx*0.04);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+                        osc.connect(gain); gain.connect(audioCtx.destination);
+                        osc.start(now + idx*0.04); osc.stop(now + 0.5);
+                    });
+                } else if (type === 'transition') {
+                    const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+                    osc.type='sine'; osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.exponentialRampToValueAtTime(880, now+0.3);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now+0.35);
+                    osc.connect(gain); gain.connect(audioCtx.destination);
+                    osc.start(now); osc.stop(now+0.4);
+                }
+            } catch (e) {}
+        }
+        function triggerHaptic(type) {
+            if (!navigator.vibrate) return;
+            if (type === 'success') navigator.vibrate(40);
+            else if (type === 'soft') navigator.vibrate(15);
+            else if (type === 'transition') navigator.vibrate(100);
+        }
+
+        function triggerSuccessBurst(originX, originY) {
+            const container = document.getElementById('ipad-container');
+            const rect = container.getBoundingClientRect();
+            const localX = (originX - rect.left) / currentScale;
+            const localY = (originY - rect.top) / currentScale;
+            const particles = ['🏮','✨','🏮','✨'];
+            for (let i = 0; i < 8; i++) {
+                const p = document.createElement('div');
+                p.className = 'success-particle';
+                p.innerText = particles[i % particles.length];
+                p.style.left = `${localX}px`; p.style.top = `${localY}px`;
+                container.appendChild(p);
+                const angle = (i/8)*Math.PI*2 + Math.random()*0.4;
+                const distance = 60 + Math.random()*50;
+                const destX = Math.cos(angle)*distance, destY = Math.sin(angle)*distance;
+                requestAnimationFrame(() => {
+                    p.style.transform = `translate(calc(-50% + ${destX}px), calc(-50% + ${destY}px)) scale(1.2)`;
+                    p.style.opacity = '0';
+                });
+                setTimeout(() => p.remove(), 600);
+            }
+        }
+
+        function toggleLanguage() {
+            initAudioContext();
+            if (currentLang === 'en') currentLang = 'zh-cn';
+            else if (currentLang === 'zh-cn') currentLang = 'zh-hk';
+            else currentLang = 'en';
+            const t = translations[currentLang];
+            document.getElementById('lang-button').innerText = t.langName;
+            document.getElementById('home-lang').innerText = t.langName;
+            document.querySelector('#home-button .home-label').innerText = t.home;
+            renderHomeScreen();
+            if (currentGameId) {
+                document.getElementById('game-title').innerText = t.titles[currentGameId];
+                document.getElementById('progress').innerText = `${t.round}: ${currentRound}`;
+                initGame();
+            }
+        }
+
+        // ===== Adaptive difficulty (per-game) =====
+        const difficultyScores = { shapeSorting: 0, colorSorting: 0, objectID: 0, matching: 0, jigsaw: 0 };
+        let roundMistakes = 0, roundHintFired = false, roundStartTime = 0;
+        function getDifficultyTier(gameId) {
+            const s = difficultyScores[gameId] ?? 0;
+            if (s <= 0) return 0; if (s <= 3) return 1; return 2;
+        }
+        function getIdleHintDelay() {
+            const tier = getDifficultyTier(currentGameId);
+            // Longer waits before nudging — especially for jigsaw, which is
+            // a slower, more contemplative task.
+            if (currentGameId === 'jigsaw') return [30000, 45000, 60000][tier];
+            return [6000, 9000, 13000][tier];
+        }
+        function getPoolSize(gameId) {
+            const tier = getDifficultyTier(gameId);
+            if (gameId === 'shapeSorting') return [2, 3, 5][tier];
+            if (gameId === 'colorSorting') return [2, 4, 6][tier];
+            if (gameId === 'objectID')     return [2, 4, 6][tier];
+            if (gameId === 'matching')     return [2, 3, 4][tier];
+            if (gameId === 'jigsaw')       return [2, 4, 6][tier];
+            return 3;
+        }
+        function recordRoundResult() {
+            const gameId = currentGameId;
+            const elapsed = (performance.now() - roundStartTime) / 1000;
+            let delta = 0;
+            if (roundMistakes === 0 && !roundHintFired) delta = +1;
+            if (roundHintFired) delta -= 1;
+            if (roundMistakes >= 1) delta -= 1;
+            if (roundMistakes >= 3) delta -= 1;
+            const next = (difficultyScores[gameId] ?? 0) + delta;
+            difficultyScores[gameId] = Math.max(-3, Math.min(6, next));
+            const log = ensureGameLog(gameId);
+            log.rounds += 1; log.mistakes += roundMistakes;
+            if (roundHintFired) log.hintFires += 1;
+            log.durations.push(elapsed);
+        }
+
+        let idleTimer = null;
+        let currentLevelAnswers = [];
+        function pokeActivityEngine() {
+            clearTimeout(idleTimer);
+            clearActiveHints();
+            if (isDemoMode) return;
+            noteIdleSampleStart();
+            idleTimer = setTimeout(() => triggerSmartHint(), getIdleHintDelay());
+        }
+        function clearActiveHints() {
+            document.querySelectorAll('.hint-pulse').forEach(el => el.classList.remove('hint-pulse'));
+        }
+        function triggerSmartHint() {
+            if (isDemoMode) return;
+            if (!roundHintFired) noteIdleSampleEnd(currentGameId, true);
+            roundHintFired = true;
+            currentLevelAnswers.forEach(el => { if (el) el.classList.add('hint-pulse'); });
+        }
+        function trackMistake(offendingElement = null) {
+            triggerHaptic('soft');
+            roundMistakes++;
+            if (offendingElement) {
+                offendingElement.classList.add('faded-error');
+                offendingElement.onpointerdown = null;
+                offendingElement.onclick = null;
+            }
+            // Jigsaw: wait until ~6 mistakes before nudging with a hint.
+            const mistakeThreshold = currentGameId === 'jigsaw' ? 6 : 1;
+            if (roundMistakes >= mistakeThreshold) {
+                triggerSmartHint();
+                setTimeout(() => triggerSmartHint(), 600);
+            }
+        }
+        function updateDifficultyBadge() {
+            const out = document.getElementById('cg-difficulty');
+            if (!out) return;
+            const t = translations[currentLang];
+            const lines = games.map(g => {
+                const tier = getDifficultyTier(g);
+                const label = [t.diffEasy, t.diffMed, t.diffHard][tier];
+                const name = t.titles[g] || g;
+                return `<div><strong>${name}:</strong> ${label} (score ${difficultyScores[g] ?? 0})</div>`;
+            });
+            out.innerHTML = lines.join('');
+        }
+
+        // ===== Round complete: always continue same game (unlimited) =====
+        function handleRoundComplete(targetElement, eventX, eventY) {
+            if (isDemoMode) return;
+            clearTimeout(idleTimer);
+            clearActiveHints();
+            recordRoundResult();
+            if (targetElement) targetElement.classList.add('instant-success');
+            if (eventX && eventY) triggerSuccessBurst(eventX, eventY);
+            currentRound++;
+            setTimeout(() => {
+                if (targetElement) targetElement.classList.remove('instant-success');
+                triggerHaptic('success');
+                playFeedbackSound('success');
+                document.getElementById('progress').innerText = `${translations[currentLang].round}: ${currentRound}`;
+                initGame();
+            }, 450);
+        }
+
+        // ===== Cancel any in-flight demo =====
+        function cancelActiveDemo() {
+            activeDemoTimeoutIds.forEach(id => clearTimeout(id));
+            activeDemoTimeoutIds = [];
+            isDemoMode = false;
+            document.getElementById('input-lock-overlay').style.display = "none";
+            document.getElementById('demo-pointer').style.display = "none";
+            document.querySelectorAll('.object-card').forEach(c => c.classList.remove('demo-pressed'));
+            document.querySelectorAll('.tile').forEach(t => t.classList.remove('selected'));
+        }
+
+        // ===== Init / switching =====
+        function initGame() {
+            if (!currentGameId) return;
+            cancelActiveDemo();
+            updateDifficultyBadge();
+            currentLevelAnswers = [];
+            roundMistakes = 0; roundHintFired = false;
+            roundStartTime = performance.now();
+            document.getElementById('game-title').innerText = translations[currentLang].titles[currentGameId];
+            if (currentGameId === 'shapeSorting') setupShapeGame();
+            else if (currentGameId === 'colorSorting') setupColorGame();
+            else if (currentGameId === 'objectID') setupObjectIDGame();
+            else if (currentGameId === 'matching') setupMatchingGame();
+            else if (currentGameId === 'jigsaw') setupJigsawGame();
+            pokeActivityEngine();
+        }
+
+        function showGameScreen(gameId) {
+            games.forEach(g => document.getElementById(g).classList.remove('active'));
+            document.getElementById(gameId).classList.add('active');
+        }
+
+        function startGame(gameId) {
+            initAudioContext();
+            currentGameId = gameId;
+            currentRound = 1;
+            document.getElementById('progress').innerText = `${translations[currentLang].round}: ${currentRound}`;
+            crossfadeTransition(() => {
+                document.getElementById('home-screen').classList.add('hidden');
+                showGameScreen(gameId);
+                initGame();
+            });
+        }
+
+        
+        // ===== Hold-to-exit (prevents accidental taps for senior users) =====
+        (function setupHoldToExit() {
+            const HOLD_MS = 2000;
+            function attach() {
+                const btn = document.getElementById('home-button');
+                if (!btn) { return; }
+                const fill = btn.querySelector('.hold-fill');
+                let timer = null;
+                let raf = null;
+                let startTs = 0;
+                function reset() {
+                    if (timer) { clearTimeout(timer); timer = null; }
+                    if (raf) { cancelAnimationFrame(raf); raf = null; }
+                    if (fill) { fill.style.width = '0%'; }
+                }
+                function tick() {
+                    const pct = Math.min(100, ((performance.now() - startTs) / HOLD_MS) * 100);
+                    if (fill) { fill.style.width = pct + '%'; }
+                    if (pct < 100) { raf = requestAnimationFrame(tick); }
+                }
+                function start(e) {
+                    e.preventDefault();
+                    reset();
+                    startTs = performance.now();
+                    raf = requestAnimationFrame(tick);
+                    timer = setTimeout(function () {
+                        reset();
+                        goHome();
+                    }, HOLD_MS);
+                }
+                btn.addEventListener('mousedown', start);
+                btn.addEventListener('touchstart', start, { passive: false });
+                ['mouseup','mouseleave','touchend','touchcancel'].forEach(function (ev) {
+                    btn.addEventListener(ev, reset);
+                });
+                btn.addEventListener('click', function (e) { e.preventDefault(); });
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', attach);
+            } else {
+                attach();
+            }
+        })();
+
+        function goHome() {
+            cancelActiveDemo();
+            clearTimeout(idleTimer);
+            clearActiveHints();
+            // Reset difficulty for all tasks when returning home
+            Object.keys(difficultyScores).forEach(g => difficultyScores[g] = 0);
+            triggerHaptic('transition');
+            playFeedbackSound('transition');
+            crossfadeTransition(() => {
+                if (currentGameId) document.getElementById(currentGameId).classList.remove('active');
+                currentGameId = null;
+                document.getElementById('home-screen').classList.remove('hidden');
+                renderHomeScreen();
+            });
+        }
+
+        // ===== Pointer drag (supports simultaneous fingers — each draggable has its own pointerId) =====
+        function makeElementDraggable(el, typeId, targetBoxId) {
+            let startX = 0, startY = 0, activePointerId = null;
+            el.onpointerdown = function(e) {
+                if (isDemoMode) return;
+                if (el.classList.contains('faded-error')) return;
+                if (activePointerId !== null) return;
+                initAudioContext();
+                pokeActivityEngine();
+                e.preventDefault();
+                activePointerId = e.pointerId;
+                try { el.setPointerCapture(e.pointerId); } catch(_) {}
+                startX = e.clientX; startY = e.clientY;
+                el.style.transition = "none";
+
+                el.onpointermove = function(ev) {
+                    if (ev.pointerId !== activePointerId) return;
+                    let deltaX = (ev.clientX - startX) / currentScale;
+                    let deltaY = (ev.clientY - startY) / currentScale;
+                    el.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+                };
+                const finish = function(ev) {
+                    if (ev.pointerId !== activePointerId) return;
+                    el.onpointermove = null;
+                    el.onpointerup = null;
+                    el.onpointercancel = null;
+                    activePointerId = null;
+                    const targetBox = document.getElementById(targetBoxId);
+                    const targetRect = targetBox.getBoundingClientRect();
+                    const elRect = el.getBoundingClientRect();
+                    const isOverlapping = (
+                        elRect.left < targetRect.right &&
+                        elRect.right > targetRect.left &&
+                        elRect.top < targetRect.bottom &&
+                        elRect.bottom > targetRect.top
+                    );
+                    if (isOverlapping) {
+                        if (typeId === targetBox.getAttribute('data-accept')) {
+                            handleRoundComplete(targetBox, ev.clientX, ev.clientY);
+                        } else {
+                            el.style.transition = "none";
+                            el.style.transform = "translate(0px, 0px)";
+                            el.classList.add('faded-error');
+                            el.onpointerdown = null;
+                            roundMistakes++;
+                            triggerSmartHint();
+                            setTimeout(() => triggerSmartHint(), 600);
+                        }
+                    } else {
+                        el.style.transition = "none";
+                        el.style.transform = "translate(0px, 0px)";
+                    }
+                };
+                el.onpointerup = finish;
+                el.onpointercancel = finish;
+            };
+        }
+
+        // ===== Demonstration engine =====
+        // Plays a guided pointer animation at the start of each task (round 1).
+        // - 'drag': pointer moves from itemElement into targetElement.
+        // - 'tap':  pointer taps itemElement (and optional secondaryItem for matching).
+        function runDemonstration(itemElement, targetElement, actionType, secondaryItem = null) {
+            if (!itemElement) return;
+            isDemoMode = true;
+            // Jigsaw pieces live inside a scroll/overflow-clipped tray. For the
+            // demo drag, portal the piece into the iPad container so it isn't
+            // clipped while it travels up to the board. Restored after the demo.
+            let __demoPortal = null;
+            if (actionType === 'drag' && itemElement.classList.contains('jigsaw-piece')) {
+                const ipad = document.getElementById('ipad-container');
+                const ipadRect0 = ipad.getBoundingClientRect();
+                const r0 = itemElement.getBoundingClientRect();
+                const ph = document.createElement('div');
+                ph.style.width  = itemElement.offsetWidth  + 'px';
+                ph.style.height = itemElement.offsetHeight + 'px';
+                ph.style.flex   = '0 0 auto';
+                const origParent = itemElement.parentNode;
+                const origNext   = itemElement.nextSibling;
+                origParent.insertBefore(ph, itemElement);
+                const left = (r0.left - ipadRect0.left) / currentScale - ipad.clientLeft;
+                const top  = (r0.top  - ipadRect0.top)  / currentScale - ipad.clientTop;
+                itemElement.style.position = 'absolute';
+                itemElement.style.margin   = '0';
+                itemElement.style.left     = left + 'px';
+                itemElement.style.top      = top  + 'px';
+                itemElement.style.zIndex   = '9999';
+                ipad.appendChild(itemElement);
+                __demoPortal = { ph, origParent, origNext };
+            }
+            const __demoRestore = () => {
+                if (!__demoPortal) return;
+                const { ph, origParent, origNext } = __demoPortal;
+                itemElement.style.position = '';
+                itemElement.style.margin   = '';
+                itemElement.style.left     = '';
+                itemElement.style.top      = '';
+                itemElement.style.zIndex   = '';
+                if (origParent) {
+                    if (ph && ph.parentNode === origParent) {
+                        origParent.insertBefore(itemElement, ph);
+                        ph.remove();
+                    } else if (origNext && origNext.parentNode === origParent) {
+                        origParent.insertBefore(itemElement, origNext);
+                    } else {
+                        origParent.appendChild(itemElement);
+                    }
+                }
+                __demoPortal = null;
+            };
+            const lockOverlay = document.getElementById('input-lock-overlay');
+            const banner = document.getElementById('lock-banner');
+            const pointer = document.getElementById('demo-pointer');
+            const containerRect = document.getElementById('ipad-container').getBoundingClientRect();
+
+            banner.innerText = translations[currentLang].watchDemo;
+            banner.style.background = "var(--hint-color)";
+            lockOverlay.style.display = "flex";
+
+            const itemRect = itemElement.getBoundingClientRect();
+            const startLeft = ((itemRect.left - containerRect.left) / currentScale) + (itemRect.width / currentScale / 2) - 20;
+            const startTop  = ((itemRect.top  - containerRect.top ) / currentScale) + (itemRect.height / currentScale / 2) - 20;
+
+            pointer.style.transition = "none";
+            pointer.style.left = `${startLeft}px`;
+            pointer.style.top  = `${startTop}px`;
+            pointer.style.transform = "scale(1)";
+            pointer.style.display = "block";
+
+            const t1 = setTimeout(() => {
+                pointer.style.transition = "transform 0.4s ease";
+                pointer.style.transform = (actionType === 'tap' && !secondaryItem) ? "scale(0.6)" : "scale(0.8)";
+
+                if (actionType === 'tap' && !secondaryItem) {
+                    itemElement.classList.add('demo-pressed');
+                }
+                if (actionType === 'tap' && secondaryItem) {
+                    itemElement.classList.add('selected'); // matching: highlight first tile
+                }
+
+                const t2 = setTimeout(() => {
+                    if (actionType === 'drag' && targetElement) {
+                        const targetRect = targetElement.getBoundingClientRect();
+                        const moveX = ((targetRect.left - itemRect.left) / currentScale) + (targetRect.width / currentScale / 2) - (itemRect.width / currentScale / 2);
+                        const moveY = ((targetRect.top  - itemRect.top ) / currentScale) + (targetRect.height / currentScale / 2) - (itemRect.height / currentScale / 2);
+                        itemElement.style.transition = "transform 2.0s cubic-bezier(0.45, 0, 0.55, 1)";
+                        itemElement.style.transform = `translate(${moveX}px, ${moveY}px)`;
+                        pointer.style.transition = "transform 2.0s cubic-bezier(0.45, 0, 0.55, 1)";
+                        pointer.style.transform = `translate(${moveX}px, ${moveY}px) scale(0.8)`;
+                    }
+
+                    const t3 = setTimeout(() => {
+                        pointer.style.transform = "scale(1)";
+                        if (actionType === 'tap' && !secondaryItem) {
+                            itemElement.classList.remove('demo-pressed');
+                        }
+
+                        if (actionType === 'tap' && secondaryItem) {
+                            // Move pointer to the secondary (matching partner) tile.
+                            const t4 = setTimeout(() => {
+                                const secRect = secondaryItem.getBoundingClientRect();
+                                const nextLeft = ((secRect.left - containerRect.left) / currentScale) + (secRect.width / currentScale / 2) - 20;
+                                const nextTop  = ((secRect.top  - containerRect.top ) / currentScale) + (secRect.height / currentScale / 2) - 20;
+                                pointer.style.transition = "all 1.2s ease";
+                                pointer.style.left = `${nextLeft}px`;
+                                pointer.style.top  = `${nextTop}px`;
+
+                                const t5 = setTimeout(() => {
+                                    pointer.style.transform = "scale(0.8)";
+                                    secondaryItem.classList.add('selected');
+                                    const t6 = setTimeout(() => finishDemoStep(), 1200);
+                                    activeDemoTimeoutIds.push(t6);
+                                }, 1200);
+                                activeDemoTimeoutIds.push(t5);
+                            }, 600);
+                            activeDemoTimeoutIds.push(t4);
+                        } else {
+                            const t7 = setTimeout(() => finishDemoStep(), 800);
+                            activeDemoTimeoutIds.push(t7);
+                        }
+
+                        function finishDemoStep() {
+                            pointer.style.display = "none";
+                            pointer.style.transform = "none";
+                            if (actionType === 'drag') {
+                                itemElement.style.transition = "none";
+                                itemElement.style.transform = "none";
+                            }
+                            __demoRestore();
+                            itemElement.classList.remove('demo-pressed');
+                            itemElement.classList.remove('selected');
+                            if (secondaryItem) secondaryItem.classList.remove('selected');
+
+                            banner.innerText = translations[currentLang].yourTurn;
+                            banner.style.background = "#047857";
+                            const t8 = setTimeout(() => {
+                                lockOverlay.style.display = "none";
+                                isDemoMode = false;
+                                pokeActivityEngine();
+                            }, 1100);
+                            activeDemoTimeoutIds.push(t8);
+                        }
+                    }, actionType === 'drag' ? 2100 : 900);
+                    activeDemoTimeoutIds.push(t3);
+                }, 400);
+                activeDemoTimeoutIds.push(t2);
+            }, 600);
+            activeDemoTimeoutIds.push(t1);
+        }
+
+        // ===== Shapes =====
+        const baseShapes = {
+            squareLattice: `<svg class="shape-svg" viewBox="0 0 100 100"><rect x="15" y="15" width="70" height="70" fill="none" stroke="#b91c1c" stroke-width="10"/><path d="M50,15 L50,85 M15,50 L85,50" stroke="#b91c1c" stroke-width="6"/></svg>`,
+            diamondLattice: `<svg class="shape-svg" viewBox="0 0 100 100"><polygon points="50,10 90,50 50,90 10,50" fill="none" stroke="#047857" stroke-width="10"/><path d="M50,10 L50,90 M10,50 L90,50" stroke="#047857" stroke-width="6"/></svg>`,
+            circleLattice: `<svg class="shape-svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="#c2410c" stroke-width="10"/><path d="M21,21 L79,79 M21,79 L79,21" stroke="#c2410c" stroke-width="6"/></svg>`,
+            octagonalLattice: `<svg class="shape-svg" viewBox="0 0 100 100"><polygon points="30,10 70,10 90,30 90,70 70,90 30,90 10,70 10,30" fill="none" stroke="#7e22ce" stroke-width="10"/><circle cx="50" cy="50" r="20" fill="none" stroke="#7e22ce" stroke-width="5"/></svg>`,
+            fanLattice: `<svg class="shape-svg" viewBox="0 0 100 100"><path d="M10,80 C10,30 90,30 90,80 Z" fill="none" stroke="#0369a1" stroke-width="10"/><path d="M50,80 L25,40 M50,80 L50,30 M50,80 L75,40" stroke="#0369a1" stroke-width="6"/></svg>`
+        };
+        function setupShapeGame() {
+            document.getElementById('shape-instruction').innerText = translations[currentLang].instructions.shape;
+            const poolSize = getPoolSize('shapeSorting');
+            const baseKeys = Object.keys(baseShapes);
+            const activePoolKeys = baseKeys.slice(0, poolSize);
+            const targetKey = activePoolKeys[Math.floor(Math.random()*activePoolKeys.length)];
+            const dropBox = document.getElementById('shape-target');
+            dropBox.innerHTML = baseShapes[targetKey] + `<span style="font-size:14px; color:#475569; font-weight:bold; margin-top:8px">${translations[currentLang].matchHere}</span>`;
+            dropBox.setAttribute('data-accept', targetKey);
+            const shuffled = [...activePoolKeys].sort(() => Math.random()-0.5);
+            const container = document.getElementById('shape-options');
+            container.innerHTML = '';
+            let elementToDemo = null;
+            shuffled.forEach(key => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'draggable-item';
+                itemDiv.innerHTML = baseShapes[key];
+                container.appendChild(itemDiv);
+                makeElementDraggable(itemDiv, key, 'shape-target');
+                if (key === targetKey) elementToDemo = itemDiv;
+            });
+            currentLevelAnswers = [elementToDemo, dropBox];
+            if (currentRound === 1) {
+                const t = setTimeout(() => runDemonstration(elementToDemo, dropBox, 'drag'), 700);
+                activeDemoTimeoutIds.push(t);
+            }
+        }
+
+        // ===== Colors =====
+        const baseColors = [
+            { name: 'Vermilion Red', hex: '#dc2626' },
+            { name: 'Jade Green', hex: '#059669' },
+            { name: 'Imperial Gold', hex: '#eab308' },
+            { name: 'Peacock Blue', hex: '#0284c7' },
+            { name: 'Plum Purple', hex: '#7c3aed' },
+            { name: 'Ink Black', hex: '#1e293b' }
+        ];
+        function setupColorGame() {
+            document.getElementById('color-instruction').innerText = translations[currentLang].instructions.color;
+            const poolSize = getPoolSize('colorSorting');
+            const activePool = baseColors.slice(0, poolSize);
+            const targetColor = activePool[Math.floor(Math.random()*activePool.length)];
+            const dropBox = document.getElementById('color-target-box');
+            document.getElementById('color-target-bucket').style.backgroundColor = targetColor.hex;
+            dropBox.setAttribute('data-accept', targetColor.name);
+            const shuffled = [...activePool].sort(() => Math.random()-0.5);
+            const container = document.getElementById('color-options');
+            container.innerHTML = '';
+            let elementToDemo = null;
+            shuffled.forEach(color => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'draggable-item';
+                itemDiv.innerHTML = `<div class="color-swatch" style="background-color: ${color.hex}"></div>`;
+                container.appendChild(itemDiv);
+                makeElementDraggable(itemDiv, color.name, 'color-target-box');
+                if (color.name === targetColor.name) elementToDemo = itemDiv;
+            });
+            currentLevelAnswers = [elementToDemo, dropBox];
+            if (currentRound === 1) {
+                const t = setTimeout(() => runDemonstration(elementToDemo, dropBox, 'drag'), 700);
+                activeDemoTimeoutIds.push(t);
+            }
+        }
+
+        // ===== Object ID =====
+        function setupObjectIDGame() {
+            const optionCount = getPoolSize('objectID');
+            const themeObjects = getThemeObjects();
+            const shuffledPool = [...themeObjects].sort(() => Math.random()-0.5).slice(0, optionCount);
+            const target = shuffledPool[Math.floor(Math.random()*shuffledPool.length)];
+            document.getElementById('object-instruction').innerText =
+                translations[currentLang].instructions.objectFind;
+            const targetBox = document.getElementById('object-target');
+            targetBox.innerHTML = `<span class="target-icon">${target.icon}</span>`;
+            const container = document.getElementById('object-options');
+            container.innerHTML = '';
+            const objectCols = optionCount <= 2 ? 2 : (optionCount <= 4 ? 2 : 3);
+            container.style.gridTemplateColumns = `repeat(${objectCols}, 1fr)`;
+            const cardSize = optionCount === 2 ? 160 : (optionCount === 4 ? 130 : 110);
+            const iconSize = optionCount === 2 ? 88 : (optionCount === 4 ? 72 : 60);
+            const targetIconSize = optionCount === 6 ? 80 : 96;
+            document.querySelector('#object-target .target-icon').style.fontSize = targetIconSize + 'px';
+            let elementToDemo = null;
+            shuffledPool.forEach(obj => {
+                const btn = document.createElement('button');
+                btn.className = 'object-card';
+                btn.style.width = cardSize + 'px';
+                btn.style.height = cardSize + 'px';
+                btn.innerHTML = `<span class="obj-icon" style="font-size:${iconSize}px">${obj.icon}</span>`;
+                btn.onpointerdown = (e) => {
+                    if (isDemoMode) return;
+                    if (btn.classList.contains('faded-error')) return;
+                    if (btn.dataset.handled === '1') return;
+                    btn.dataset.handled = '1';
+                    e.preventDefault();
+                    initAudioContext();
+                    pokeActivityEngine();
+                    if (obj.name === target.name) handleRoundComplete(btn, e.clientX, e.clientY);
+                    else trackMistake(btn);
+                };
+                container.appendChild(btn);
+                if (obj.name === target.name) elementToDemo = btn;
+            });
+            currentLevelAnswers = [elementToDemo];
+            if (currentRound === 1) {
+                const t = setTimeout(() => runDemonstration(elementToDemo, null, 'tap'), 700);
+                activeDemoTimeoutIds.push(t);
+            }
+        }
+
+        // ===== Matching =====
+        function setupMatchingGame() {
+            document.getElementById('matching-instruction').innerText = translations[currentLang].instructions.matching;
+            let selectedTile = null;
+            totalMatchesFound = 0;
+            const pairCount = getPoolSize('matching');
+            totalMatchesNeeded = pairCount;
+            const themeMatchPool = getThemeObjects().map(o => ({ id: o.name, icon: o.icon }));
+            const selectedIcons = themeMatchPool.slice(0, pairCount);
+            const activeCards = [...selectedIcons, ...selectedIcons].sort(() => Math.random()-0.5);
+            const container = document.getElementById('card-options');
+            container.innerHTML = '';
+            container.style.gridTemplateColumns = `repeat(${pairCount}, 1fr)`;
+            activeCards.forEach(cardObj => {
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                tile.innerHTML = cardObj.icon;
+                tile.dataset.value = cardObj.id;
+                tile.onpointerdown = function(e) {
+                    e.preventDefault();
+                    if (isDemoMode) return;
+                    if (tile.classList.contains('faded-error') || this.classList.contains('matched')) return;
+                    initAudioContext();
+                    pokeActivityEngine();
+                    if (selectedTile === this) {
+                        this.classList.remove('selected');
+                        selectedTile = null;
+                        clearActiveHints();
+                        refreshMatchingHintTargets();
+                        return;
+                    }
+                    if (!selectedTile) {
+                        selectedTile = this;
+                        this.classList.add('selected');
+                        clearActiveHints();
+                        const partnerId = this.dataset.value;
+                        currentLevelAnswers = Array.from(document.querySelectorAll('#card-options .tile:not(.matched)'))
+                            .filter(t => t.dataset.value === partnerId && t !== this);
+                        return;
+                    }
+                    if (selectedTile.dataset.value === this.dataset.value) {
+                        const a = selectedTile, b = this;
+                        selectedTile = null;
+                        a.classList.remove('selected');
+                        clearActiveHints();
+                        totalMatchesFound++;
+                        a.classList.add('instant-success'); b.classList.add('instant-success');
+                        triggerSuccessBurst(e.clientX, e.clientY);
+                        setTimeout(() => {
+                            a.classList.remove('instant-success'); b.classList.remove('instant-success');
+                            a.classList.add('matched'); b.classList.add('matched');
+                            refreshMatchingHintTargets();
+                            if (totalMatchesFound === totalMatchesNeeded) {
+                                setTimeout(() => handleRoundComplete(null, null, null), 100);
+                            } else {
+                                triggerHaptic('success'); playFeedbackSound('success');
+                            }
+                        }, 450);
+                    } else {
+                        const partnerId = selectedTile.dataset.value;
+                        const partners = Array.from(document.querySelectorAll('#card-options .tile:not(.matched)'))
+                            .filter(t => t.dataset.value === partnerId && t !== selectedTile);
+                        clearActiveHints();
+                        partners.forEach(p => p.classList.add('hint-pulse'));
+                        currentLevelAnswers = partners;
+                        roundMistakes++;
+                    }
+                };
+                container.appendChild(tile);
+            });
+            function refreshMatchingHintTargets() {
+                const remaining = Array.from(document.querySelectorAll('#card-options .tile:not(.matched)'));
+                if (remaining.length > 0) {
+                    const sampleId = remaining[0].dataset.value;
+                    currentLevelAnswers = remaining.filter(t => t.dataset.value === sampleId);
+                }
+            }
+            refreshMatchingHintTargets();
+            if (currentRound === 1) {
+                const t = setTimeout(() => {
+                    const tiles = Array.from(document.querySelectorAll('#card-options .tile'));
+                    if (tiles.length < 2) return;
+                    const demoVal = tiles[0].dataset.value;
+                    const matches = tiles.filter(x => x.dataset.value === demoVal);
+                    if (matches.length >= 2) runDemonstration(matches[0], null, 'tap', matches[1]);
+                }, 900);
+                activeDemoTimeoutIds.push(t);
+            }
+        }
+
+        // ===== Jigsaw Puzzle =====
+        // Dementia-friendly: small piece counts, large pieces, faint silhouette
+        // of the full picture visible inside every empty slot as a guide, no
+        // rotation, generous snap, mistakes are forgiving (snap back, no fade).
+        // Traditional interlocking jigsaw pieces. Each piece has tab/blank
+        // edges that match its neighbours. A single underlying "scene" SVG is
+        // clipped per-piece so the assembled board forms one larger picture,
+        // while every piece's content is unique (gradient sky→ground, sun,
+        // clouds, hills, scattered accents, plus a big themed subject).
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // Edge sign s = ±1. Stored on the boundary between two pieces.
+        // For piece (r,c): outward sign (positive = bulge OUT) is
+        //   top    = -h[r][c]      (0 if r === 0)
+        //   bottom = +h[r+1][c]    (0 if r === rows-1)
+        //   left   = -v[r][c]      (0 if c === 0)
+        //   right  = +v[r][c+1]    (0 if c === cols-1)
+        function buildJigsawEdges(rows, cols) {
+            const h = Array.from({ length: rows + 1 }, () => new Array(cols).fill(0));
+            const v = Array.from({ length: rows }, () => new Array(cols + 1).fill(0));
+            for (let r = 1; r < rows; r++)
+                for (let c = 0; c < cols; c++) h[r][c] = Math.random() < 0.5 ? -1 : 1;
+            for (let r = 0; r < rows; r++)
+                for (let c = 1; c < cols; c++) v[r][c] = Math.random() < 0.5 ? -1 : 1;
+            return { h, v };
+        }
+
+        // Build SVG path commands for one edge with a bezier tab/blank knob.
+        // sign: +1 bulge outward, -1 notch inward, 0 straight.
+        function edgePathSegment(start, dir, normal, length, sign, tab) {
+            if (sign === 0) {
+                return `L ${start.x + dir.x * length} ${start.y + dir.y * length}`;
+            }
+            const at = (t) => ({
+                x: start.x + dir.x * length * t,
+                y: start.y + dir.y * length * t,
+            });
+            const off = (p, n) => ({
+                x: p.x + normal.x * n,
+                y: p.y + normal.y * n,
+            });
+            const k = tab * sign;
+            const t1 = at(0.36), t3 = at(0.64), t4 = at(1);
+            const apex = off(at(0.5), k * 1.45);
+            const c1 = off(at(0.28), k * -0.15);
+            const c2 = off(at(0.30), k * 1.25);
+            const c3 = off(at(0.70), k * 1.25);
+            const c4 = off(at(0.72), k * -0.15);
+            return (
+                `L ${t1.x} ${t1.y} ` +
+                `C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${apex.x} ${apex.y} ` +
+                `C ${c3.x} ${c3.y}, ${c4.x} ${c4.y}, ${t3.x} ${t3.y} ` +
+                `L ${t4.x} ${t4.y}`
+            );
+        }
+
+        function buildPiecePath(r, c, rows, cols, pieceSize, tab, edges) {
+            const top    = r === 0          ? 0 : -edges.h[r][c];
+            const bottom = r === rows - 1   ? 0 :  edges.h[r + 1][c];
+            const left   = c === 0          ? 0 : -edges.v[r][c];
+            const right  = c === cols - 1   ? 0 :  edges.v[r][c + 1];
+            const S = pieceSize;
+            let d = `M 0 0 `;
+            d += edgePathSegment({ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 0, y: -1 }, S, top, tab) + ' ';
+            d += edgePathSegment({ x: S, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 0 }, S, right, tab) + ' ';
+            d += edgePathSegment({ x: S, y: S }, { x: -1, y: 0 }, { x: 0, y: 1 }, S, bottom, tab) + ' ';
+            d += edgePathSegment({ x: 0, y: S }, { x: 0, y: -1 }, { x: -1, y: 0 }, S, left, tab) + ' Z';
+            return d;
+        }
+
+        // Build the single "picture" the puzzle assembles into. Uses a
+        // landscape scene so every region of the board has unique content
+        // (no large blank areas → every piece is visually distinguishable).
+        function buildSceneSVG(W, H, picture) {
+            const accents = ['🌸','🌷','🌼','🌻','🍀','🦋','🐝','🍃','🌿','🐞','🐦','🌺'];
+            let n = Math.floor(Math.random() * 1e9) + 1;
+            const rand = () => { n = (n * 9301 + 49297) % 233280; return n / 233280; };
+            const mainSize = Math.min(W, H) * 0.42;
+            let s = '';
+            s += `<defs>
+                <linearGradient id="jbg" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#9fd3ee"/>
+                    <stop offset="45%" stop-color="#ffe6b8"/>
+                    <stop offset="70%" stop-color="#f6c98a"/>
+                    <stop offset="100%" stop-color="#7fb069"/>
+                </linearGradient>
+                <radialGradient id="jsun" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#fff7c0"/>
+                    <stop offset="70%" stop-color="#ffd45a"/>
+                    <stop offset="100%" stop-color="#ffb347" stop-opacity="0"/>
+                </radialGradient>
+            </defs>`;
+            s += `<rect width="${W}" height="${H}" fill="url(#jbg)"/>`;
+            // Sun
+            s += `<circle cx="${W * 0.80}" cy="${H * 0.18}" r="${Math.min(W, H) * 0.13}" fill="url(#jsun)"/>`;
+            s += `<circle cx="${W * 0.80}" cy="${H * 0.18}" r="${Math.min(W, H) * 0.07}" fill="#ffd24a"/>`;
+            // Clouds
+            const cloudSize = H * 0.13;
+            s += `<text x="${W * 0.18}" y="${H * 0.17}" font-size="${cloudSize}" text-anchor="middle" dominant-baseline="central">☁️</text>`;
+            s += `<text x="${W * 0.46}" y="${H * 0.10}" font-size="${cloudSize * 0.85}" text-anchor="middle" dominant-baseline="central">☁️</text>`;
+            s += `<text x="${W * 0.62}" y="${H * 0.22}" font-size="${cloudSize * 0.7}" text-anchor="middle" dominant-baseline="central">☁️</text>`;
+            // Rolling hills
+            s += `<ellipse cx="${W * 0.25}" cy="${H * 0.82}" rx="${W * 0.55}" ry="${H * 0.22}" fill="#9ccc65"/>`;
+            s += `<ellipse cx="${W * 0.82}" cy="${H * 0.86}" rx="${W * 0.5}" ry="${H * 0.20}" fill="#7cb342"/>`;
+            // Tree silhouettes on the horizon
+            s += `<text x="${W * 0.08}" y="${H * 0.70}" font-size="${H * 0.14}" text-anchor="middle" dominant-baseline="central">🌳</text>`;
+            s += `<text x="${W * 0.93}" y="${H * 0.68}" font-size="${H * 0.13}" text-anchor="middle" dominant-baseline="central">🌲</text>`;
+            // Main subject — large, centered, sitting on the ground line
+            s += `<text x="${W * 0.5}" y="${H * 0.52}" font-size="${mainSize}" text-anchor="middle" dominant-baseline="central">${picture.icon}</text>`;
+            // Scattered ground accents — pseudo-random, evenly spread across the lower band
+            const cellsX = 5, cellsY = 3;
+            for (let gy = 0; gy < cellsY; gy++) {
+                for (let gx = 0; gx < cellsX; gx++) {
+                    const a = accents[Math.floor(rand() * accents.length)];
+                    const jitterX = (rand() - 0.5) * (W / cellsX) * 0.6;
+                    const jitterY = (rand() - 0.5) * (H * 0.45 / cellsY) * 0.6;
+                    const x = (gx + 0.5) * (W / cellsX) + jitterX;
+                    const y = H * 0.62 + (gy + 0.5) * (H * 0.34 / cellsY) + jitterY;
+                    const sz = H * (0.07 + rand() * 0.04);
+                    s += `<text x="${x}" y="${y}" font-size="${sz}" text-anchor="middle" dominant-baseline="central">${a}</text>`;
+                }
+            }
+            return s;
+        }
+
+        // Render one jigsaw piece as a standalone SVG that clips the full
+        // scene to this piece's shape. Tabs/blanks extend beyond pieceSize
+        // by `tab` on each side, so the SVG box is (pieceSize + 2*tab)².
+        let __jigsawPieceUid = 0;
+        function renderJigsawPieceSVG(r, c, rows, cols, pieceSize, tab, edges, sceneInner, W, H, faint) {
+            const path = buildPiecePath(r, c, rows, cols, pieceSize, tab, edges);
+            const vbX = -tab, vbY = -tab, vbW = pieceSize + 2 * tab, vbH = pieceSize + 2 * tab;
+            const uid = 'jp' + (++__jigsawPieceUid);
+            const sceneX = -c * pieceSize, sceneY = -r * pieceSize;
+            const opacity = faint ? 0.32 : 1;
+            const strokeOpacity = faint ? 0.25 : 0.55;
+            // NOTE: SVG feDropShadow used to be applied per piece. With 75–100
+            // pieces it made every repaint composite dozens of filter regions,
+            // which caused noticeable lag as the puzzle filled in. The shadow
+            // is now a single CSS drop-shadow on the .jigsaw-piece element
+            // (cheap, GPU-composited) and is removed entirely once placed.
+            return `<svg width="${vbW}" height="${vbH}" viewBox="${vbX} ${vbY} ${vbW} ${vbH}" style="display:block;overflow:visible;opacity:${opacity};pointer-events:none;">
+                <defs>
+                    <clipPath id="${uid}_cp"><path d="${path}"/></clipPath>
+                </defs>
+                <g>
+                    <g clip-path="url(#${uid}_cp)">
+                        <g transform="translate(${sceneX} ${sceneY})">
+                            <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${sceneInner}</svg>
+                        </g>
+                    </g>
+                    <path d="${path}" fill="none" stroke="rgba(20,10,0,${strokeOpacity})" stroke-width="1.4" stroke-linejoin="round"/>
+                </g>
+            </svg>`;
+        }
+
+        // Backward-compatible stub (unused now).
+        function makePiecePortion(icon, r, c, rows, cols, size, faint) {
+            return `<div style="width:${size}px;height:${size}px"></div>`;
+        }
+
+        function makeJigsawDraggable(el, slotId, onPlaced) {
+            let startX = 0, startY = 0, activePointerId = null;
+            // Drag state for portal-style lift (so pieces aren't clipped by the
+            // tray's overflow:auto scroll container).
+            let dragOrigParent = null, dragOrigNext = null, dragPlaceholder = null;
+            let dragOriginLeft = 0, dragOriginTop = 0;
+
+            el.onpointerdown = function (e) {
+                if (isDemoMode) return;
+                if (el.classList.contains('placed')) return;
+                if (activePointerId !== null) return;
+                initAudioContext();
+                pokeActivityEngine();
+                e.preventDefault();
+                activePointerId = e.pointerId;
+                startX = e.clientX; startY = e.clientY;
+                el.style.transition = "none";
+
+                // Lift piece out of the tray (which clips overflow) into the
+                // iPad container so it can be dragged ABOVE everything else.
+                const ipad = document.getElementById('ipad-container');
+                const ipadRect = ipad.getBoundingClientRect();
+                const elRect = el.getBoundingClientRect();
+                dragOrigParent = el.parentNode;
+                dragOrigNext = el.nextSibling;
+                // Placeholder preserves the piece's spot in the tray's flex row
+                // and keeps the tray's scroll position stable.
+                dragPlaceholder = document.createElement('div');
+                dragPlaceholder.style.width = el.offsetWidth + 'px';
+                dragPlaceholder.style.height = el.offsetHeight + 'px';
+                dragPlaceholder.style.flex = '0 0 auto';
+                dragOrigParent.insertBefore(dragPlaceholder, el);
+
+                // Account for #ipad-container's border: absolute children are
+                // positioned against the padding-box, but getBoundingClientRect returns
+                // the border-box. Subtract the border width so the lifted piece stays
+                // exactly under the finger instead of jumping by the border thickness.
+                dragOriginLeft = (elRect.left - ipadRect.left) / currentScale - ipad.clientLeft;
+                dragOriginTop  = (elRect.top  - ipadRect.top)  / currentScale - ipad.clientTop;
+                el.style.position = 'absolute';
+                el.style.margin = '0';
+                el.style.left = dragOriginLeft + 'px';
+                el.style.top  = dragOriginTop  + 'px';
+                el.style.zIndex = '9999';
+                el.classList.add('dragging');
+                ipad.appendChild(el);
+                // Capture AFTER re-parenting — moving the node to a new parent
+                // can implicitly release pointer capture in some browsers,
+                // which made fast drags "drop" the piece mid-gesture.
+                try { el.setPointerCapture(e.pointerId); } catch (_) {}
+
+                el.onpointermove = function (ev) {
+                    if (ev.pointerId !== activePointerId) return;
+                    const dx = (ev.clientX - startX) / currentScale;
+                    const dy = (ev.clientY - startY) / currentScale;
+                    el.style.transform = `translate(${dx}px, ${dy}px)`;
+                };
+                const finish = function (ev) {
+                    if (ev.pointerId !== activePointerId) return;
+                    el.onpointermove = null; el.onpointerup = null; el.onpointercancel = null;
+                    activePointerId = null;
+                    const elRect = el.getBoundingClientRect();
+                    let bestSlot = null, bestArea = 0;
+                    document.querySelectorAll('#jigsaw-board .jigsaw-slot').forEach(s => {
+                        const r = s.getBoundingClientRect();
+                        const ox = Math.max(0, Math.min(elRect.right, r.right) - Math.max(elRect.left, r.left));
+                        const oy = Math.max(0, Math.min(elRect.bottom, r.bottom) - Math.max(elRect.top, r.top));
+                        const a = ox * oy;
+                        if (a > bestArea) { bestArea = a; bestSlot = s; }
+                    });
+                    const targetSlot = document.getElementById(slotId);
+                    if (bestSlot && bestSlot === targetSlot && !bestSlot.classList.contains('filled')) {
+                        bestSlot.classList.add('filled', 'instant-success');
+                        el.classList.add('placed');
+                        el.classList.remove('dragging');
+                        el.classList.remove('hint-pulse');
+                        targetSlot.classList.remove('hint-pulse');
+                        const tabOff = parseInt(el.dataset.tab || '0', 10);
+                        el.style.transition = "none";
+                        el.style.transform = "none";
+                        el.style.position = "absolute";
+                        el.style.left = (-tabOff) + "px";
+                        el.style.top = (-tabOff) + "px";
+                        el.style.zIndex = "2";
+                        bestSlot.appendChild(el);
+                        // Tray placeholder no longer needed.
+                        if (dragPlaceholder && dragPlaceholder.parentNode) dragPlaceholder.parentNode.removeChild(dragPlaceholder);
+                        dragPlaceholder = null; dragOrigParent = null; dragOrigNext = null;
+                        triggerHaptic('success');
+                        playFeedbackSound('success');
+                        triggerSuccessBurst(ev.clientX, ev.clientY);
+                        setTimeout(() => bestSlot.classList.remove('instant-success'), 450);
+                        onPlaced && onPlaced();
+                    } else {
+                        // Wrong slot or empty space — count failed drops PER PIECE,
+                        // then hint that specific piece + its target slot after 6 mistakes.
+                        const movedEnough = Math.hypot(ev.clientX - startX, ev.clientY - startY) > 12;
+                        if (movedEnough) {
+                            const pieceMistakes = (parseInt(el.dataset.mistakes || '0', 10) || 0) + 1;
+                            el.dataset.mistakes = String(pieceMistakes);
+                            roundMistakes++;
+                            triggerHaptic('soft');
+                            if (pieceMistakes >= 6 && !isDemoMode) {
+                                clearActiveHints();
+                                [el, targetSlot].forEach(n => n && n.classList.add('hint-pulse'));
+                                if (!roundHintFired) {
+                                    roundHintFired = true;
+                                    noteIdleSampleEnd(currentGameId, true);
+                                }
+                            }
+                        }
+                        // Animate the lifted piece back to its tray placeholder, then return it to the tray.
+                        const ipad2 = document.getElementById('ipad-container');
+                        const ipadRect2 = ipad2.getBoundingClientRect();
+                        const phRect = dragPlaceholder ? dragPlaceholder.getBoundingClientRect() : null;
+                        const targetLeft = phRect ? (phRect.left - ipadRect2.left) / currentScale : dragOriginLeft;
+                        const targetTop  = phRect ? (phRect.top  - ipadRect2.top)  / currentScale : dragOriginTop;
+                        const dx = targetLeft - dragOriginLeft;
+                        const dy = targetTop  - dragOriginTop;
+                        el.style.transition = "transform 0.35s ease";
+                        el.style.transform = `translate(${dx}px, ${dy}px)`;
+                        const origParent = dragOrigParent;
+                        const origNext = dragOrigNext;
+                        const placeholder = dragPlaceholder;
+                        dragOrigParent = null; dragOrigNext = null; dragPlaceholder = null;
+                        setTimeout(() => {
+                            el.classList.remove('dragging');
+                            el.style.transition = "none";
+                            el.style.transform = "none";
+                            el.style.position = "";
+                            el.style.left = "";
+                            el.style.top = "";
+                            el.style.margin = "";
+                            el.style.zIndex = "5";
+                            if (origParent) {
+                                if (placeholder && placeholder.parentNode === origParent) {
+                                    origParent.insertBefore(el, placeholder);
+                                    placeholder.remove();
+                                } else if (origNext && origNext.parentNode === origParent) {
+                                    origParent.insertBefore(el, origNext);
+                                } else {
+                                    origParent.appendChild(el);
+                                }
+                            }
+                        }, 360);
+                    }
+                };
+                el.onpointerup = finish;
+                el.onpointercancel = finish;
+                // Safety net: if pointer capture is ever lost (fast drag,
+                // browser quirk), window-level listeners keep the gesture alive.
+                const winMove = (ev) => { if (ev.pointerId === activePointerId) el.onpointermove && el.onpointermove(ev); };
+                const winUp   = (ev) => {
+                    if (ev.pointerId !== activePointerId) return;
+                    window.removeEventListener('pointermove', winMove);
+                    window.removeEventListener('pointerup', winUp);
+                    window.removeEventListener('pointercancel', winUp);
+                    finish(ev);
+                };
+                window.addEventListener('pointermove', winMove);
+                window.addEventListener('pointerup', winUp);
+                window.addEventListener('pointercancel', winUp);
+            };
+        }
+
+        // Gentle, dementia-friendly progression: starts tiny, slowly grows.
+        // Designed to comfortably fill ~45-60 minutes of play (10-18 puzzles).
+        // Starts at 16 pieces and gradually increases. Piece size is computed
+        // dynamically so the whole board + tray always fit on screen.
+        // Round 1 starts at 24 pieces; every completion adds 4 more pieces.
+        function jigsawDimsFor(pieces) {
+            // Pick the (cols, rows) factor pair closest to a 4:3 (cols:rows) ratio.
+            let best = null;
+            for (let rows = 2; rows <= Math.floor(Math.sqrt(pieces * 2)); rows++) {
+                if (pieces % rows !== 0) continue;
+                const cols = pieces / rows;
+                if (cols < rows) continue;
+                const score = Math.abs((cols / rows) - (4 / 3));
+                if (!best || score < best.score) best = { cols, rows, score };
+            }
+            if (best) return { pieces, cols: best.cols, rows: best.rows };
+            // Fallback for prime counts: pad to nearest factorable count.
+            return jigsawDimsFor(pieces + 1);
+        }
+        function jigsawStepFor(round) {
+            // Round 1 starts at 75 pieces; round 2 onwards caps at 100 pieces.
+            const pieces = round <= 1 ? 75 : 100;
+            return jigsawDimsFor(pieces);
+        }
+        let jigsawCompleted = 0;
+        let lastJigsawPictureName = null;
+
+        function computeJigsawPieceSize(cols, rows) {
+            // Measure the actual space available inside the game-zone so the
+            // puzzle always fits the iPad container regardless of screen size.
+            // Layout: board on top, horizontal scrollable tray below.
+            const zone = document.querySelector('#jigsaw .game-zone');
+            const zoneRect = zone.getBoundingClientRect();
+            const availW = Math.max(400, zoneRect.width) - 20;
+            const availH = Math.max(260, zoneRect.height) - 18 - 40; // minus board↕tray gap and tray bottom margin
+            // Board padding (14px each side) + the tray's own padding (14px top/bottom
+            // = 28) + a small breathing buffer. Tray inner height ≈ pieceSize + 2*tab + 12.
+            const boardPaddingY = 28;
+            const trayChromeY = 28 + 12; // tray padding + min-height buffer
+            // Iteratively solve for the largest pieceSize where the board (rows*p +
+            // padding) plus the tray (p + 2*tab + chrome) fits in availH.
+            // tab = max(8, round(p * 0.20)), so tray grows with p.
+            let p = Math.floor(Math.min(availW / cols, availH / rows));
+            for (let i = 0; i < 8; i++) {
+                const tab = Math.max(8, Math.round(p * 0.20));
+                const trayH = p + 2 * tab + trayChromeY;
+                const boardH = availH - trayH - boardPaddingY;
+                const next = Math.floor(Math.min(availW / cols, boardH / rows));
+                if (next >= p) break;
+                p = next;
+            }
+            // Allow pieces to shrink further for dense grids (e.g. 10x10 = 100 pieces)
+            // so the tray bar always stays on screen.
+            return Math.max(22, Math.min(120, p));
+        }
+
+        function setupJigsawGame() {
+            const board = document.getElementById('jigsaw-board');
+            const tray = document.getElementById('jigsaw-tray');
+            board.innerHTML = ''; tray.innerHTML = '';
+
+            // Step through the progression. After the last step, stay there.
+            // Round 1 = 24 pieces, then +4 per completed round.
+            const step = jigsawStepFor(currentRound);
+            const { cols, rows } = step;
+            const pieceSize = computeJigsawPieceSize(cols, rows);
+
+            // Friendly instruction that also tracks accomplishment over the hour.
+            const baseMsg = translations[currentLang].instructions.jigsaw;
+            const doneMsg = jigsawCompleted > 0
+                ? `  ✨ ${jigsawCompleted} picture${jigsawCompleted === 1 ? '' : 's'} finished!`
+                : '';
+            document.getElementById('jigsaw-instruction').innerText = baseMsg + doneMsg;
+
+            board.style.gridTemplateColumns = `repeat(${cols}, ${pieceSize}px)`;
+            board.style.gridTemplateRows = `repeat(${rows}, ${pieceSize}px)`;
+            // Tray is a horizontal scrolling bar — height fits one row of pieces (incl. tabs).
+            const _tabEstimate = Math.max(8, Math.round(pieceSize * 0.20));
+            const _box = pieceSize + 2 * _tabEstimate;
+            tray.style.maxWidth = '';
+            tray.style.minHeight = (_box + 12) + 'px';
+            tray.style.height = (_box + 12) + 'px';
+
+            // Pick a picture, avoiding immediate repeats for variety across the hour.
+            const themeObjects = getThemeObjects();
+            let candidates = themeObjects.filter(o => o.name !== lastJigsawPictureName);
+            if (candidates.length === 0) candidates = themeObjects;
+            const picture = candidates[Math.floor(Math.random() * candidates.length)];
+            lastJigsawPictureName = picture.name;
+
+            const positions = [];
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) positions.push({ r, c });
+            }
+
+            // Traditional jigsaw: precompute interlocking edges + the single
+            // underlying picture, then clip each piece to its shape.
+            const tab = Math.max(8, Math.round(pieceSize * 0.20));
+            const edges = buildJigsawEdges(rows, cols);
+            const W = cols * pieceSize, H = rows * pieceSize;
+            const sceneInner = buildSceneSVG(W, H, picture);
+            const pieceBox = pieceSize + 2 * tab;
+
+            // Build slots — each shows its target region of the picture faintly,
+            // clipped to the piece's shape, as a "ghost" guide. Slot overflow
+            // is hidden so the faint guide stays inside the slot box.
+            positions.forEach(({ r, c }) => {
+                const slot = document.createElement('div');
+                slot.className = 'jigsaw-slot';
+                slot.id = `jigsaw-slot-${r}-${c}`;
+                slot.style.width = pieceSize + 'px';
+                slot.style.height = pieceSize + 'px';
+                const guide = document.createElement('div');
+                guide.style.cssText = `position:absolute;left:${-tab}px;top:${-tab}px;width:${pieceBox}px;height:${pieceBox}px;pointer-events:none;`;
+                guide.innerHTML = renderJigsawPieceSVG(r, c, rows, cols, pieceSize, tab, edges, sceneInner, W, H, true);
+                slot.appendChild(guide);
+                board.appendChild(slot);
+            });
+
+            // Draggable pieces — each is an SVG-shaped jigsaw piece.
+            const totalNeeded = positions.length;
+            let placedCount = 0;
+            let firstPiece = null, firstSlot = null;
+            const shuffled = [...positions].sort(() => Math.random() - 0.5);
+            shuffled.forEach(({ r, c }) => {
+                const piece = document.createElement('div');
+                piece.className = 'jigsaw-piece';
+                piece.style.width = pieceBox + 'px';
+                piece.style.height = pieceBox + 'px';
+                piece.dataset.tab = String(tab);
+                piece.innerHTML = renderJigsawPieceSVG(r, c, rows, cols, pieceSize, tab, edges, sceneInner, W, H, false);
+                tray.appendChild(piece);
+                const slotId = `jigsaw-slot-${r}-${c}`;
+                piece.dataset.slotId = slotId;
+                makeJigsawDraggable(piece, slotId, () => {
+                    placedCount++;
+                    // Clear stale hint highlight from the just-placed pair and
+                    // advance the hint target to the next still-unplaced piece.
+                    clearActiveHints();
+                    const nextPiece = tray.querySelector('.jigsaw-piece:not(.placed)')
+                        || document.querySelector('#jigsaw-board .jigsaw-piece:not(.placed)');
+                    if (nextPiece) {
+                        const nextSlot = document.getElementById(nextPiece.dataset.slotId);
+                        currentLevelAnswers = [nextPiece, nextSlot];
+                    } else {
+                        currentLevelAnswers = [];
+                    }
+                    if (placedCount === totalNeeded) {
+                        jigsawCompleted++;
+                        showJigsawCelebration(picture, () => {
+                            handleRoundComplete(null, null, null);
+                        });
+                    }
+                });
+                if (!firstPiece) {
+                    firstPiece = piece;
+                    firstSlot = document.getElementById(slotId);
+                }
+            });
+
+            currentLevelAnswers = [firstPiece, firstSlot];
+            if (currentRound === 1) {
+                const t = setTimeout(() => runDemonstration(firstPiece, firstSlot, 'drag'), 700);
+                activeDemoTimeoutIds.push(t);
+            }
+        }
+
+        function showJigsawCelebration(picture, done) {
+            const board = document.getElementById('jigsaw-board');
+            const container = document.getElementById('ipad-container');
+
+            // Clean the board of slot guides so the picture reads as one image.
+            board.classList.add('jigsaw-board-complete');
+
+            // 1. Dim the rest of the iPad screen with a vignette overlay.
+            const dim = document.createElement('div');
+            dim.className = 'jigsaw-cinema-dim';
+            container.appendChild(dim);
+
+            // 2. Lift the board into "spotlight" with a slow Ken-Burns zoom.
+            board.classList.add('jigsaw-cinema-board');
+
+            // 3. Elegant cinematic title — fades in below the board, then out.
+            const boardRect = board.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+            const titleTop = (boardRect.bottom - containerRect.top) / currentScale + 18;
+            const title = document.createElement('div');
+            title.className = 'jigsaw-cinema-title';
+            title.style.top = titleTop + 'px';
+            title.innerHTML = `
+                <div class="eyebrow">Completed</div>
+                <div class="name">${picture.icon} &nbsp; ${picture.name}</div>
+            `;
+            container.appendChild(title);
+
+            // 4. Sparkles drifting outward from around the board edges.
+            const sparkleNodes = [];
+            const sparkleCount = 18;
+            const cx = (boardRect.left + boardRect.width / 2 - containerRect.left) / currentScale;
+            const cy = (boardRect.top + boardRect.height / 2 - containerRect.top) / currentScale;
+            const radius = Math.min(boardRect.width, boardRect.height) / currentScale * 0.55;
+            for (let i = 0; i < sparkleCount; i++) {
+                const angle = (Math.PI * 2 * i) / sparkleCount + Math.random() * 0.3;
+                const r0 = radius * (0.85 + Math.random() * 0.15);
+                const r1 = radius * (1.35 + Math.random() * 0.45);
+                const sx = cx + Math.cos(angle) * r0;
+                const sy = cy + Math.sin(angle) * r0;
+                const dx = Math.cos(angle) * (r1 - r0);
+                const dy = Math.sin(angle) * (r1 - r0);
+                const s = document.createElement('div');
+                s.className = 'jigsaw-cinema-sparkle';
+                s.style.left = sx + 'px';
+                s.style.top = sy + 'px';
+                s.style.setProperty('--dx', dx.toFixed(1) + 'px');
+                s.style.setProperty('--dy', dy.toFixed(1) + 'px');
+                s.style.animationDelay = (0.4 + Math.random() * 1.8).toFixed(2) + 's';
+                const size = 6 + Math.random() * 10;
+                s.style.width = size + 'px';
+                s.style.height = size + 'px';
+                container.appendChild(s);
+                sparkleNodes.push(s);
+            }
+
+            // 5. Gentle success chime if available.
+            try { playFeedbackSound && playFeedbackSound('success'); } catch (_) {}
+
+            // 6. Fade everything out and continue to the next puzzle.
+            const CINEMA_MS = 5000;
+            const FADE_MS = 800;
+            setTimeout(() => {
+                dim.classList.add('jigsaw-cinema-fadeout');
+                title.style.animation = 'cinemaTitleOut 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards';
+                sparkleNodes.forEach(s => {
+                    s.style.transition = 'opacity 0.6s ease';
+                    s.style.opacity = '0';
+                });
+                board.style.transition = 'transform 0.9s cubic-bezier(0.4, 0, 0.2, 1)';
+                board.style.animation = 'none';
+                board.style.transform = 'scale(1) translateY(0)';
+            }, CINEMA_MS - FADE_MS);
+
+            setTimeout(() => {
+                dim.remove();
+                title.remove();
+                sparkleNodes.forEach(s => s.remove());
+                board.classList.remove('jigsaw-cinema-board');
+                board.classList.remove('jigsaw-board-complete');
+                board.style.transition = '';
+                board.style.transform = '';
+                board.style.animation = '';
+                done && done();
+            }, CINEMA_MS);
+        }
+
+
+        // ===== Home screen rendering =====
+        function greetingForHour(h) {
+            if (h < 12) return 'Good morning';
+            if (h < 17) return 'Good afternoon';
+            return 'Good evening';
+        }
+        const menuIcons = {
+            shapeSorting: '🪟',
+            colorSorting: '🎨',
+            objectID: '🏮',
+            matching: '🃏',
+            jigsaw: '🧩'
+        };
+        function renderHomeScreen() {
+            const t = translations[currentLang];
+            document.getElementById('home-title').innerText = t.homeTitle;
+            document.getElementById('home-subtitle').innerText = t.homeSubtitle;
+            document.getElementById('home-lang').innerText = t.langName;
+            const menu = document.getElementById('game-menu');
+            menu.innerHTML = '';
+            games.forEach(g => {
+                const card = document.createElement('button');
+                card.className = 'menu-card';
+                card.innerHTML = `<span class="menu-icon">${menuIcons[g] || '🎯'}</span><span class="menu-label">${t.titles[g] || g}</span>`;
+                card.onclick = () => startGame(g);
+                menu.appendChild(card);
+            });
+            const name = (patientName || '').trim();
+            if (name) {
+                const greet = greetingForHour(new Date().getHours());
+                document.getElementById('home-title').innerText = `${greet}, ${name} — ${t.homeTitle.toLowerCase()}`;
+            }
+        }
+
+        // ===== Caregiver panel =====
+        function openCaregiverPanel() {
+            document.getElementById('cg-name').value = patientName;
+            document.getElementById('cg-theme').value = currentTheme;
+            try {
+                const savedEmail = localStorage.getItem('cg.email');
+                if (savedEmail) document.getElementById('cg-email').value = savedEmail;
+            } catch (e) {}
+            renderSessionLog();
+            updateDifficultyBadge();
+            document.getElementById('caregiver-overlay').classList.add('visible');
+            // Live-refresh the session log while the panel is open
+            clearInterval(window._cgRefresh);
+            window._cgRefresh = setInterval(renderSessionLog, 2000);
+        }
+        function closeCaregiverPanel() {
+            document.getElementById('caregiver-overlay').classList.remove('visible');
+            clearInterval(window._cgRefresh);
+        }
+        function applyCaregiverSettings() {
+            patientName = document.getElementById('cg-name').value || '';
+            const newTheme = document.getElementById('cg-theme').value;
+            const themeChanged = newTheme !== currentTheme;
+            currentTheme = newTheme;
+            const email = document.getElementById('cg-email').value || '';
+            try {
+                localStorage.setItem('cg.name', patientName);
+                localStorage.setItem('cg.theme', currentTheme);
+                localStorage.setItem('cg.email', email);
+            } catch (e) {}
+            renderHomeScreen();
+            if (themeChanged && currentGameId) initGame();
+            closeCaregiverPanel();
+        }
+        function fmtMs(ms) { return (ms/1000).toFixed(1) + 's'; }
+        function fmtDuration(ms) {
+            const s = Math.max(0, Math.round(ms / 1000));
+            const h = Math.floor(s / 3600);
+            const m = Math.floor((s % 3600) / 60);
+            const sec = s % 60;
+            if (h > 0) return `${h}h ${m}m ${sec}s`;
+            if (m > 0) return `${m}m ${sec}s`;
+            return `${sec}s`;
+        }
+        function fmtClock(ts) {
+            const d = new Date(ts);
+            return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+        function gameTitle(g) { return (translations[currentLang].titles || {})[g] || g; }
+
+        function buildSessionStats() {
+            const now = Date.now();
+            const totalMs = now - engagement.sessionStart;
+            // Make sure active+idle account for the latest second
+            let activeMs = engagement.activeMs;
+            let idleMs = engagement.idleMs;
+            const sinceInput = now - engagement.lastActivity;
+            // Pending idle event (still ongoing)
+            const pendingIdle = engagement.wasIdle && engagement.currentIdleStart
+                ? { startedAt: engagement.currentIdleStart, endedAt: now, durationMs: now - engagement.currentIdleStart, gameId: engagement.currentIdleGame || 'home', ongoing: true }
+                : null;
+            const idleEvents = pendingIdle ? engagement.idleEvents.concat([pendingIdle]) : engagement.idleEvents.slice();
+            return { totalMs, activeMs, idleMs, sinceInput, idleEvents };
+        }
+
+        function renderSessionLog() {
+            const el = document.getElementById('cg-session-log');
+            const gs = Object.keys(sessionLog.perGame);
+            const stats = buildSessionStats();
+            const engagementPct = stats.totalMs > 0 ? Math.round((stats.activeMs / stats.totalMs) * 100) : 0;
+            const longestIdle = stats.idleEvents.reduce((m, e) => Math.max(m, e.durationMs), 0);
+
+            let html = '';
+            html += `<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px 14px; margin-bottom:10px;">`;
+            html += `<div><strong>Session start:</strong> ${fmtClock(engagement.sessionStart)}</div>`;
+            html += `<div><strong>Total time in app:</strong> ${fmtDuration(stats.totalMs)}</div>`;
+            html += `<div><strong>Engaged time:</strong> ${fmtDuration(stats.activeMs)} (${engagementPct}%)</div>`;
+            html += `<div><strong>Idle time:</strong> ${fmtDuration(stats.idleMs)}</div>`;
+            html += `<div><strong>Idle episodes:</strong> ${stats.idleEvents.length}</div>`;
+            html += `<div><strong>Longest idle:</strong> ${longestIdle ? fmtDuration(longestIdle) : '—'}</div>`;
+            html += `</div>`;
+            html += `<div style="font-size:12px; color:#64748b; margin-bottom:10px;">Idle = no interaction for ${IDLE_THRESHOLD_MS/1000}s or more.</div>`;
+
+            if (gs.length === 0) {
+                html += '<div>No rounds completed yet.</div>';
+            } else {
+                html += '<table><thead><tr><th>Task</th><th>Rounds</th><th>Mistakes</th><th>Hints</th><th>Avg idle→hint</th><th>Avg time</th></tr></thead><tbody>';
+                gs.forEach(g => {
+                    const log = sessionLog.perGame[g];
+                    const avgIdle = log.idleSamples.length ? (log.idleSamples.reduce((a,b)=>a+b,0)/log.idleSamples.length) : null;
+                    const avgDur  = log.durations.length  ? (log.durations.reduce((a,b)=>a+b,0)/log.durations.length)  : null;
+                    html += `<tr><td>${gameTitle(g)}</td><td>${log.rounds}</td><td>${log.mistakes}</td><td>${log.hintFires}</td><td>${avgIdle ? fmtMs(avgIdle) : '—'}</td><td>${avgDur ? avgDur.toFixed(1)+'s' : '—'}</td></tr>`;
+                });
+                html += '</tbody></table>';
+            }
+
+            if (stats.idleEvents.length) {
+                html += `<div style="margin-top:12px;"><strong>Idle episodes (when client stopped interacting):</strong></div>`;
+                html += '<table style="margin-top:4px;"><thead><tr><th>Started</th><th>Duration</th><th>During</th></tr></thead><tbody>';
+                stats.idleEvents.slice(-12).reverse().forEach(e => {
+                    html += `<tr><td>${fmtClock(e.startedAt)}</td><td>${fmtDuration(e.durationMs)}${e.ongoing ? ' (ongoing)' : ''}</td><td>${gameTitle(e.gameId)}</td></tr>`;
+                });
+                html += '</tbody></table>';
+                if (stats.idleEvents.length > 12) {
+                    html += `<div style="font-size:11px; color:#64748b; margin-top:4px;">Showing most recent 12 of ${stats.idleEvents.length}.</div>`;
+                }
+            }
+            el.innerHTML = html;
+        }
+
+        function buildReportText() {
+            const stats = buildSessionStats();
+            const engagementPct = stats.totalMs > 0 ? Math.round((stats.activeMs / stats.totalMs) * 100) : 0;
+            const longestIdle = stats.idleEvents.reduce((m, e) => Math.max(m, e.durationMs), 0);
+            const lines = [];
+            lines.push(`Therapeutic Engagement — Session Report`);
+            lines.push(`Patient: ${patientName || '(unnamed)'}`);
+            lines.push(`Theme: ${currentTheme}`);
+            lines.push(`Generated: ${new Date().toLocaleString()}`);
+            lines.push(``);
+            lines.push(`OVERVIEW`);
+            lines.push(`  Session start:    ${fmtClock(engagement.sessionStart)}`);
+            lines.push(`  Total time:       ${fmtDuration(stats.totalMs)}`);
+            lines.push(`  Engaged time:     ${fmtDuration(stats.activeMs)} (${engagementPct}%)`);
+            lines.push(`  Idle time:        ${fmtDuration(stats.idleMs)}`);
+            lines.push(`  Idle episodes:    ${stats.idleEvents.length}`);
+            lines.push(`  Longest idle:     ${longestIdle ? fmtDuration(longestIdle) : '—'}`);
+            lines.push(`  (Idle = no interaction for ${IDLE_THRESHOLD_MS/1000}s+)`);
+            lines.push(``);
+            lines.push(`PER-TASK ACTIVITY`);
+            const gs = Object.keys(sessionLog.perGame);
+            if (!gs.length) {
+                lines.push(`  (no rounds completed)`);
+            } else {
+                gs.forEach(g => {
+                    const log = sessionLog.perGame[g];
+                    const avgDur = log.durations.length ? (log.durations.reduce((a,b)=>a+b,0)/log.durations.length).toFixed(1)+'s' : '—';
+                    const avgIdle = log.idleSamples.length ? fmtMs(log.idleSamples.reduce((a,b)=>a+b,0)/log.idleSamples.length) : '—';
+                    lines.push(`  ${gameTitle(g)}`);
+                    lines.push(`    Rounds: ${log.rounds}   Mistakes: ${log.mistakes}   Hints: ${log.hintFires}`);
+                    lines.push(`    Avg round time: ${avgDur}   Avg idle→hint: ${avgIdle}`);
+                });
+            }
+            lines.push(``);
+            lines.push(`IDLE EPISODES`);
+            if (!stats.idleEvents.length) {
+                lines.push(`  None recorded.`);
+            } else {
+                stats.idleEvents.forEach(e => {
+                    lines.push(`  ${fmtClock(e.startedAt)} — idle for ${fmtDuration(e.durationMs)}${e.ongoing ? ' (ongoing)' : ''} during ${gameTitle(e.gameId)}`);
+                });
+            }
+            return lines.join('\n');
+        }
+
+        function exportSessionEmail() {
+            const to = (document.getElementById('cg-email')?.value || '').trim();
+            const subject = `Session report — ${patientName || 'Patient'} — ${new Date().toLocaleDateString()}`;
+            const body = buildReportText();
+            const url = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            window.location.href = url;
+        }
+
+        function copySessionReport(btn) {
+            const text = buildReportText();
+            const done = () => {
+                if (!btn) return;
+                const orig = btn.innerText;
+                btn.innerText = '✓ Copied';
+                setTimeout(() => { btn.innerText = orig; }, 1600);
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(done).catch(() => {
+                    window.prompt('Copy the report:', text);
+                });
+            } else {
+                window.prompt('Copy the report:', text);
+            }
+        }
+
+        // Long-press caregiver dot
+        (function wireCaregiverDot() {
+            const dot = document.getElementById('caregiver-dot');
+            if (!dot) return;
+            let pressTimer = null;
+            const start = (e) => {
+                e.preventDefault();
+                dot.classList.add('charging');
+                pressTimer = setTimeout(() => { dot.classList.remove('charging'); openCaregiverPanel(); }, 1200);
+            };
+            const cancel = () => { clearTimeout(pressTimer); dot.classList.remove('charging'); };
+            dot.addEventListener('pointerdown', start);
+            dot.addEventListener('pointerup', cancel);
+            dot.addEventListener('pointerleave', cancel);
+            dot.addEventListener('pointercancel', cancel);
+        })();
+
+        // Restore saved caregiver settings
+        try {
+            const sn = localStorage.getItem('cg.name'); if (sn) patientName = sn;
+            const st = localStorage.getItem('cg.theme'); if (st && themePacks[st]) currentTheme = st;
+        } catch (e) {}
+
+        document.getElementById('lang-button').innerText = translations[currentLang].langName;
+        document.querySelector('#home-button .home-label').innerText = translations[currentLang].home;
+        renderHomeScreen();
+    </script>
+</body>
+</html>
