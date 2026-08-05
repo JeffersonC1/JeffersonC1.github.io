@@ -1339,6 +1339,7 @@
             cycleCompleted = false;
             lastRoundDelta = 0;
             cycleDemoShown.clear();
+            cycleArrowsShown.clear();
             const firstId = pickRandomFromPool(cyclePools.beginner);
             startGame(firstId);
         }
@@ -1858,6 +1859,17 @@
         }
 
         // ===== Placement arrow hints (first-round guide for sorting tasks) =====
+        // In Variety Mix, the dashed guide arrows are only shown the first time
+        // each task is offered; on later offerings of the same task they are skipped.
+        const cycleArrowsShown = new Set();
+        function allowPlacementArrows() {
+            if (!cycleMode) return true;
+            const id = currentGameId;
+            if (!id) return true;
+            if (cycleArrowsShown.has(id)) return false;
+            cycleArrowsShown.add(id);
+            return true;
+        }
         function hidePlacementArrows() {
             const ex = document.getElementById('placement-arrows');
             if (ex) ex.remove();
@@ -2851,7 +2863,7 @@
             });
 
             currentLevelAnswers = [firstDraggable, firstSlot].filter(Boolean);
-            if (currentRound === 1 && !demoDisabled) {
+            if (currentRound === 1 && !demoDisabled && allowPlacementArrows()) {
                 const pairs = dragOrder.map(k => [
                     optsEl.querySelector(`.draggable-item[data-item-id="${k}"]`),
                     document.getElementById(`shape-slot-${k}`)
@@ -2947,7 +2959,7 @@
             });
 
             currentLevelAnswers = [firstDraggable, firstSlot].filter(Boolean);
-            if (currentRound === 1 && !demoDisabled) {
+            if (currentRound === 1 && !demoDisabled && allowPlacementArrows()) {
                 const pairs = dragOrder.map(c => [
                     optsEl.querySelector(`.draggable-item[data-item-id="${c.name}"]`),
                     document.getElementById(`color-slot-${safeId(c.name)}`)
@@ -3156,7 +3168,7 @@
             });
 
             currentLevelAnswers = [firstDraggable, firstSlot].filter(Boolean);
-            if (currentRound === 1 && !demoDisabled) {
+            if (currentRound === 1 && !demoDisabled && allowPlacementArrows()) {
                 const pairs = dragOrder.map(a => [
                     optsEl.querySelector(`.animal-draggable[data-animal-id="${a.id}"]`),
                     document.getElementById(`animal-slot-${a.id}`)
