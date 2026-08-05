@@ -1339,6 +1339,7 @@
             cycleCompleted = false;
             lastRoundDelta = 0;
             cycleDemoShown.clear();
+            cycleArrowsShown.clear();
             const firstId = pickRandomFromPool(cyclePools.beginner);
             startGame(firstId);
         }
@@ -1858,6 +1859,17 @@
         }
 
         // ===== Placement arrow hints (first-round guide for sorting tasks) =====
+        // In Variety Mix, the dashed guide arrows are only shown the first time
+        // each task is offered; on later offerings of the same task they are skipped.
+        const cycleArrowsShown = new Set();
+        function allowPlacementArrows() {
+            if (!cycleMode) return true;
+            const id = currentGameId;
+            if (!id) return true;
+            if (cycleArrowsShown.has(id)) return false;
+            cycleArrowsShown.add(id);
+            return true;
+        }
         function hidePlacementArrows() {
             const ex = document.getElementById('placement-arrows');
             if (ex) ex.remove();
@@ -2851,7 +2863,7 @@
             });
 
             currentLevelAnswers = [firstDraggable, firstSlot].filter(Boolean);
-            if (currentRound === 1 && !demoDisabled) {
+            if (currentRound === 1 && !demoDisabled && allowPlacementArrows()) {
                 const pairs = dragOrder.map(k => [
                     optsEl.querySelector(`.draggable-item[data-item-id="${k}"]`),
                     document.getElementById(`shape-slot-${k}`)
@@ -2877,6 +2889,39 @@
         // Remembers the colour set used in the previous colorSorting round so a
         // new round can offer a different combination whenever possible.
         let lastColorSortSetKey = null;
+
+        // --- Perceptual colour distance so visually similar colours (e.g. two
+        // purples, or lime vs. green) are never offered in the same round. ---
+        const hexToLab = (hex) => {
+            const n = parseInt(hex.slice(1), 16);
+            let [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(v => v / 255);
+            [r, g, b] = [r, g, b].map(v => v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+            const x = (r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047;
+            const y = (r * 0.2126 + g * 0.7152 + b * 0.0722);
+            const z = (r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883;
+            const f = (t) => t > 0.008856 ? Math.cbrt(t) : (7.787 * t + 16 / 116);
+            const [fx, fy, fz] = [f(x), f(y), f(z)];
+            return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
+        };
+        const colorLab = {};
+        baseColors.forEach(c => { colorLab[c.name] = hexToLab(c.hex); });
+        const colorDistance = (a, b) => {
+            const [l1, a1, b1] = colorLab[a.name], [l2, a2, b2] = colorLab[b.name];
+            return Math.sqrt((l1 - l2) ** 2 + (a1 - a2) ** 2 + (b1 - b2) ** 2);
+        };
+        const MIN_COLOR_DISTANCE = 45;
+
+        // Greedily builds a set where every pair is at least `minDist` apart.
+        function pickDistinctColors(poolSize, minDist) {
+            const shuffled = [...baseColors].sort(() => Math.random() - 0.5);
+            const chosen = [];
+            for (const c of shuffled) {
+                if (chosen.every(o => colorDistance(c, o) >= minDist)) chosen.push(c);
+                if (chosen.length === poolSize) break;
+            }
+            return chosen;
+        }
+
         function setupColorGame() {
             document.getElementById('color-instruction').innerText = translations[currentLang].instructions.color;
             const slotsEl = document.getElementById('color-slots');
@@ -2884,9 +2929,18 @@
             slotsEl.innerHTML = ''; optsEl.innerHTML = '';
 
             const poolSize = getPoolSize('colorSorting');
-            // Pick a fresh random subset each round; if we can, avoid repeating
-            // the exact same set as the previous round.
-            const pickSet = () => [...baseColors].sort(() => Math.random() - 0.5).slice(0, poolSize);
+            // Pick a fresh random subset each round, keeping colours perceptually
+            // distinct; if we can, avoid repeating the previous round's set.
+            const pickSet = () => {
+                let dist = MIN_COLOR_DISTANCE;
+                let set = pickDistinctColors(poolSize, dist);
+                // Relax the threshold only if the palette can't fill the round.
+                while (set.length < poolSize && dist > 10) {
+                    dist -= 5;
+                    set = pickDistinctColors(poolSize, dist);
+                }
+                return set;
+            };
             const keyOf = (arr) => arr.map(c => c.name).sort().join('|');
             let pool = pickSet();
             if (baseColors.length > poolSize && lastColorSortSetKey) {
@@ -2897,6 +2951,7 @@
                 }
             }
             lastColorSortSetKey = keyOf(pool);
+
 
             slotsEl.classList.remove('compact', 'tight', 'scroll-row');
             optsEl.classList.remove('compact', 'tight');
@@ -2947,7 +3002,7 @@
             });
 
             currentLevelAnswers = [firstDraggable, firstSlot].filter(Boolean);
-            if (currentRound === 1 && !demoDisabled) {
+            if (currentRound === 1 && !demoDisabled && allowPlacementArrows()) {
                 const pairs = dragOrder.map(c => [
                     optsEl.querySelector(`.draggable-item[data-item-id="${c.name}"]`),
                     document.getElementById(`color-slot-${safeId(c.name)}`)
@@ -3156,7 +3211,7 @@
             });
 
             currentLevelAnswers = [firstDraggable, firstSlot].filter(Boolean);
-            if (currentRound === 1 && !demoDisabled) {
+            if (currentRound === 1 && !demoDisabled && allowPlacementArrows()) {
                 const pairs = dragOrder.map(a => [
                     optsEl.querySelector(`.animal-draggable[data-animal-id="${a.id}"]`),
                     document.getElementById(`animal-slot-${a.id}`)
